@@ -85,3 +85,39 @@
 17. **オブジェクトモデリングの作成**
     *   内容: 全エピックからドメインオブジェクトとその関係性を抽出し、Mermaid記法による概念モデル図と詳細定義を作成。
     *   対象: `Documents/object_modeling.md` (New)
+
+18. **設計書の作成 (DB/API/UI/Screen)**
+    *   内容: `database_design.md` (Supabase前提のDB設計), `api_design.md` (Server Actions/RPC設計), `ui_ux_design.md` (Shadcn UIベースのUI/UX設計), `screen_design.md` (画面遷移と詳細) を作成。
+    *   対象: `Documents/*_design.md` (New)
+
+19. **書き取りモードのメインコンテンツ化**
+    *   内容: 「読み」と「書き」を並列のコンテンツとして再定義。関連する全設計書（Epic, DB, API, Screen, UI/UX）を整合性を取って修正。
+    *   対象: `Documents/epics/epic_writing_practice.md`, `Documents/*_design.md` (Update)
+
+20. **UIコンポーネントの改善**
+    *   内容: `GameButton`, `NarrativeProgress`, `EmotiveDialog` の3つのカスタムコンポーネントをUI/UX設計書に追加。
+    *   対象: `Documents/ui_ux_design.md` (Update)
+
+21. **マイルーム機能の追加**
+    *   内容: 「継続性」「収集」を強化するため、マイルーム機能を仕様に追加。関連するEpic, DB, API, UI/UX, Screen設計書をすべて更新。
+    *   対象: `Documents/epics/epic_character_collection.md`, `Documents/*_design.md` (Update)
+
+22. **ドキュメントの記述詳細化**
+    *   内容: 「変更なし」「省略」といった記述をすべて展開し、各ファイルが単体で仕様を網羅するように修正。
+    *   対象: `Documents/api_design.md`, `Documents/database_design.md` (Update)
+
+23. **ドキュメント管理ルールの更新**
+    *   内容: 「変更なし」等の記述禁止ルールを明文化。
+    *   対象: `Documents/00_rules.mcd` (Update)
+
+24. **コンパニオンUIとゲーム演出の強化**
+    *   内容:
+        *   UI/UX設計書に `CompanionGuide` コンポーネント、インタラクティブな背景、ゲーム状態の環境反映（夕方、フィーバー）を追加。
+        *   画面設計書にガイドキャラのアクション定義を追加。
+        *   Epicにガイドキャラのストーリーを追加。
+        *   API/DB設計書は既存の定義で対応可能なため更新なし。
+    *   対象: `Documents/ui_ux_design.md`, `Documents/screen_design.md`, `Documents/epics/epic_character_collection.md` (Update)
+
+25. **レスポンシブ対応方針の定義**
+    *   内容: `Documents/ui_ux_design.md` に「7. レスポンシブ & デバイス対応方針」を追加。タブレットメイン、アスペクト比維持、タッチ/マウス両対応を明文化。
+    *   対象: `Documents/ui_ux_design.md` (Update)
