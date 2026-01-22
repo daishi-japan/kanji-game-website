@@ -121,3 +121,83 @@
 25. **レスポンシブ対応方針の定義**
     *   内容: `Documents/ui_ux_design.md` に「7. レスポンシブ & デバイス対応方針」を追加。タブレットメイン、アスペクト比維持、タッチ/マウス両対応を明文化。
     *   対象: `Documents/ui_ux_design.md` (Update)
+
+## 2026-01-21
+
+26. **開発計画書の作成とSSOTファイルの整備**
+    *   内容: Claude Code Harness を活用した開発フローを定義。Phase 1（プロジェクト基盤構築）の詳細タスクとPhase 2-8の概要を記載した `development_plan.md` を作成。同時に、プロジェクトルートにSSOT（Single Source of Truth）ファイル3つ（`Plans.md`, `decisions.md`, `patterns.md`）を作成し、タスク管理・技術決定・実装パターンの一元管理体制を確立。デグレード対策として、ハーネスレビュー、自動テスト、CI/CDパイプラインを開発フローに組み込む方針を明文化。
+    *   対象:
+        *   `Documents/development_plan.md` (New)
+        *   `Plans.md` (New)
+        *   `decisions.md` (New)
+        *   `patterns.md` (New)
+        *   `Documents/00_log.md` (Update)
+
+27. **Next.js プロジェクト基盤の実装（Phase 1.1完了）**
+    *   内容: Next.js 15 App Router プロジェクトの初期化を完了。TypeScript, Tailwind CSS v4, Framer Motion をインストール・設定。基本的なディレクトリ構造（app/, components/, lib/, public/）を構築し、ルートレイアウトとホーム画面を実装。Tailwind CSS v4 の新しい `@theme` ディレクティブとPostCSS設定を使用。開発サーバー起動、ビルド成功、ページ表示を確認し、Phase 1.1 の全タスクを完了。
+    *   対象:
+        *   `package.json` (New)
+        *   `tsconfig.json` (New)
+        *   `postcss.config.mjs` (New)
+        *   `.prettierrc` (New)
+        *   `.gitignore` (New)
+        *   `next.config.js` (New)
+        *   `app/layout.tsx` (New)
+        *   `app/page.tsx` (New)
+        *   `app/globals.css` (New)
+        *   `Plans.md` (Update)
+        *   `Documents/00_log.md` (Update)
+
+28. **Supabase データベース基盤の実装（Phase 1.2完了）**
+    *   内容: Supabase統合を完了。ブラウザ/サーバー用クライアントライブラリ設定、環境変数テンプレート作成、包括的なデータベーススキーマ（11テーブル）実装。RLSポリシーでセキュリティを確保し、トリガー関数で新規ユーザー自動作成・updated_at自動更新を実装。4つのRPC関数（rpc_finish_game, rpc_feed_character, rpc_evolve_character, rpc_process_login_bonus）でゲームロジックをDB側で処理。セットアップガイド（supabase/README.md）を作成し、Phase 1.2 の全タスクを完了。
+    *   対象:
+        *   `lib/supabase/client.ts` (New)
+        *   `lib/supabase/server.ts` (New)
+        *   `.env.example` (New)
+        *   `supabase/migrations/20260121_initial_schema.sql` (New)
+        *   `supabase/README.md` (New)
+        *   `Plans.md` (Update)
+        *   `Documents/00_log.md` (Update)
+
+
+29. **認証システムの実装（Phase 1.3完了）**
+    *   内容: Supabase匿名認証を使った完全な認証フローを実装。初回登録画面でひらがな名前入力、匿名認証でユーザー作成、セッションCookieによるオートログイン機能を実現。ミドルウェアで未認証ユーザーを登録ページへリダイレクト。保護者機能として計算問題（7+5=12）による認証ゲートを実装し、保護者ダッシュボード（学習サマリー、カスタムご褒美、設定のプレースホルダー）を作成。ホーム画面をユーザー名表示・保護者メニューリンク・モード選択ボタン付きに更新し、Phase 1.3 の全タスクを完了。
+    *   対象:
+        *   `app/register/page.tsx` (New)
+        *   `app/actions/auth.ts` (New)
+        *   `middleware.ts` (New)
+        *   `app/parent/auth/page.tsx` (New)
+        *   `components/auth/ParentGate.tsx` (New)
+        *   `app/parent/dashboard/page.tsx` (New)
+        *   `app/page.tsx` (Update)
+        *   `Plans.md` (Update)
+        *   `Documents/00_log.md` (Update)
+
+30. **テスト基盤の整備（Phase 1.4完了）**
+    *   内容: 包括的なテスト環境を構築し、Phase 1 の全実装に対する品質保証体制を確立。Jest + React Testing Library で単体テスト環境を構築し、ParentGateコンポーネントに6つのテストケース（計算問題表示、正解・不正解処理、キャンセル、バリデーション）を実装、カバレッジ80.76%を達成。Playwright で E2E テスト環境を構築し、5ブラウザ対応で5つのテストシナリオ（初回登録フロー、オートログイン、リダイレクト、保護者認証、入力バリデーション）を実装。GitHub Actions による CI/CD パイプライン（lint, unit-test, e2e-test, build の4ジョブ）を設定し、自動テスト実行体制を整備。テストガイド（`__tests__/README.md`）を作成し、ベストプラクティスとトラブルシューティングを文書化。全テストパス確認により Phase 1.4 を完了し、**Phase 1（プロジェクト基盤構築）全体を完了**。
+    *   対象:
+        *   `jest.config.js` (New)
+        *   `jest.setup.js` (New)
+        *   `playwright.config.ts` (New)
+        *   `__tests__/components/auth/ParentGate.test.tsx` (New)
+        *   `e2e/auth.spec.ts` (New)
+        *   `__tests__/README.md` (New)
+        *   `.github/workflows/test.yml` (New)
+        *   `package.json` (Update - テストスクリプト追加)
+        *   `Plans.md` (Update)
+        *   `Documents/00_log.md` (Update)
+
+31. **カスタムゲームコンポーネントの実装（Phase 2.1完了）**
+    *   内容: ゲーム体験に特化した4つのカスタムコンポーネントを実装し、Phase 2（コアゲームロジック）を開始。GameButton（押下時沈み込み、正解・不正解フィードバック）、NarrativeProgress（キャラクター歩行アニメーション付きプログレスバー）、EmotiveDialog（Joy/Encourage/Zen バリアント対応ダイアログ）、CompanionGuide（ローディング・ホバーガイド機能付きコンパニオン）を Framer Motion を使用して実装。各コンポーネントに包括的な単体テスト（合計38テストケース）を作成し、全テストパス、カバレッジ 86.66%（components/game）を達成。lucide-react アイコンライブラリを導入し、視覚的に分かりやすいUIを実現。7歳児向けに大きなタッチターゲット、即時フィードバック、直感的な操作を重視した設計。Phase 2.1 を完了。
+    *   対象:
+        *   `components/game/GameButton.tsx` (New)
+        *   `components/game/NarrativeProgress.tsx` (New)
+        *   `components/game/EmotiveDialog.tsx` (New)
+        *   `components/game/CompanionGuide.tsx` (New)
+        *   `__tests__/components/game/GameButton.test.tsx` (New - 9テスト)
+        *   `__tests__/components/game/NarrativeProgress.test.tsx` (New - 10テスト)
+        *   `__tests__/components/game/EmotiveDialog.test.tsx` (New - 11テスト)
+        *   `__tests__/components/game/CompanionGuide.test.tsx` (New - 8テスト)
+        *   `package.json` (Update - lucide-react追加)
+        *   `Plans.md` (Update)
+        *   `Documents/00_log.md` (Update)

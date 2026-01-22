@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #FAFAF9;
+  --color-foreground: #0F172A;
+
+  --color-primary: #F97316;
+  --color-primary-foreground: #FFFFFF;
+
+  --color-secondary: #4338CA;
+  --color-secondary-foreground: #FFFFFF;
+
+  --color-success: #22C55E;
+  --color-success-foreground: #FFFFFF;
+
+  --color-accent: #DC2626;
+  --color-accent-foreground: #FFFFFF;
+
+  --color-muted: #F1F5F9;
+  --color-muted-foreground: #64748B;
+
+  --radius-lg: 1rem;
+  --radius-md: 0.75rem;
+  --radius-sm: 0.5rem;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+}
+
+.game-button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  background-color: var(--color-primary);
+  color: var(--color-primary-foreground);
+  border-radius: 9999px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+}
+
+.game-button:hover {
+  opacity: 0.9;
+}
+
+.game-button:active {
+  transform: scale(0.95);
+}

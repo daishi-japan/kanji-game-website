@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm init:*)",
+      "Bash(npm install:*)",
+      "Bash(npm cache clean:*)",
+      "Bash(npx tailwindcss:*)",
+      "Bash(pkill:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run build:*)",
+      "Bash(timeout 10 npm run dev:*)",
+      "Bash(curl:*)",
+      "Bash(echo \"\n\n29. **認証システムの実装（Phase 1.3完了）**\n    *   内容: Supabase匿名認証を使った完全な認証フローを実装。初回登録画面でひらがな名前入力、匿名認証でユーザー作成、セッションCookieによるオートログイン機能を実現。ミドルウェアで未認証ユーザーを登録ページへリダイレクト。保護者機能として計算問題（7+5=12）による認証ゲートを実装し、保護者ダッシュボード（学習サマリー、カスタムご褒美、設定のプレースホルダー）を作成。ホーム画面をユーザー名表示・保護者メニューリンク・モード選択ボタン付きに更新し、Phase 1.3 の全タスクを完了。\n    *   対象:\n        *   \\\\`app/register/page.tsx\\\\` \\(New\\)\n        *   \\\\`app/actions/auth.ts\\\\` \\(New\\)\n        *   \\\\`middleware.ts\\\\` \\(New\\)\n        *   \\\\`app/parent/auth/page.tsx\\\\` \\(New\\)\n        *   \\\\`components/auth/ParentGate.tsx\\\\` \\(New\\)\n        *   \\\\`app/parent/dashboard/page.tsx\\\\` \\(New\\)\n        *   \\\\`app/page.tsx\\\\` \\(Update\\)\n        *   \\\\`Plans.md\\\\` \\(Update\\)\n        *   \\\\`Documents/00_log.md\\\\` \\(Update\\)\")",
+      "Bash(npm run test:ci:*)"
+    ]
+  }
+}
