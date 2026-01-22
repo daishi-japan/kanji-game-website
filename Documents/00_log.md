@@ -201,3 +201,48 @@
         *   `package.json` (Update - lucide-react追加)
         *   `Plans.md` (Update)
         *   `Documents/00_log.md` (Update)
+
+32. **読み攻略モード（落ち物パズル）の実装（Phase 2.2完了）**
+    *   内容: 落ち物パズル形式の漢字読みゲームを実装。30個の小学1年生漢字と3つのステージを定義し、ゲームロジック（スコア計算、コンボシステム、タイムボーナス、ランク判定S/A/B/C/D）を実装。FallingKanji（落下アニメーション）、AnswerButtons（3択ボタン）、GameHUD（スコア・ライフ・タイマー・コンボ表示）の専用コンポーネントを作成。ステージ選択画面とゲームプレイ画面を実装し、タイマー更新、回答判定、リザルト表示の完全なゲームループを実現。ホーム画面に「よむ（おちもの）」ボタンのリンクを追加し、Phase 2.2 を完了。
+    *   対象:
+        *   `lib/data/kanji-data.ts` (New - 30漢字、3ステージ)
+        *   `lib/game/reading-game-logic.ts` (New - ゲーム状態管理)
+        *   `components/game/FallingKanji.tsx` (New)
+        *   `components/game/AnswerButtons.tsx` (New)
+        *   `components/game/GameHUD.tsx` (New)
+        *   `app/play/reading/page.tsx` (New - ステージ選択)
+        *   `app/play/reading/[stage]/page.tsx` (New - ゲームプレイ)
+        *   `app/page.tsx` (Update - リンク追加)
+        *   `middleware.ts` (Update - /play除外)
+
+33. **書き攻略モード（書き順練習）の実装（Phase 2.3完了）**
+    *   内容: SVGパスによる書き順アニメーションと3つの練習モード（デモ・なぞり・自己申告）を実装。12個の漢字の書き順データ（SVGパス定義）と3つのセットを作成。StrokeAnimation（書き順アニメーション）、DrawingCanvas（タッチ・マウス両対応のなぞり書きキャンバス、高DPI対応）の専用コンポーネントを実装。ゲームロジック（画数チェック、スコア計算、ランク判定）を実装し、セット選択画面とゲームプレイ画面（3モード切替）を作成。NarrativeProgressにcertificateアイコンを追加し、ホーム画面に「かく（おうぎ）」ボタンのリンクを追加。Phase 2.3 を完了し、**Phase 2（コアゲームロジック実装）全体を完了**。
+    *   対象:
+        *   `lib/data/stroke-data.ts` (New - 12漢字の書き順)
+        *   `lib/game/writing-game-logic.ts` (New)
+        *   `components/game/StrokeAnimation.tsx` (New)
+        *   `components/game/DrawingCanvas.tsx` (New)
+        *   `app/play/writing/page.tsx` (New - セット選択)
+        *   `app/play/writing/[set]/page.tsx` (New - ゲームプレイ)
+        *   `app/page.tsx` (Update - リンク追加)
+        *   `components/game/NarrativeProgress.tsx` (Update - certificateアイコン)
+
+34. **キャラクター図鑑システムの実装（Phase 3.1完了）**
+    *   内容: 20種類のキャラクターと5段階のレアリティ、進化チェーン機能を持つ図鑑システムを実装。動物系（きつね、ねこ、いぬ等）、精霊系（火、水、風、土、星、月）、伝説系（りゅう、ゆにこーん等）のキャラクターを定義し、最大3段階の進化チェーン（例：こぎつね→きつね→きゅうびのきつね）を実装。CharacterCard（所持・未所持切替、レアリティバッジ、キラキラエフェクト）、CharacterGrid（フィルタ・ソート機能）のコンポーネントを作成。図鑑一覧画面（収集率サマリー、プログレスバー）とキャラクター詳細画面（ステータス、レベル・なつき度、進化チェーン表示）を実装し、ホーム画面の「ずかん」ボタンにリンクを追加。Phase 3.1 を完了。
+    *   対象:
+        *   `lib/data/character-data.ts` (New - 20キャラクター)
+        *   `components/collection/CharacterCard.tsx` (New)
+        *   `components/collection/CharacterGrid.tsx` (New)
+        *   `app/collection/page.tsx` (New - 図鑑一覧)
+        *   `app/collection/[characterId]/page.tsx` (New - キャラ詳細)
+        *   `app/page.tsx` (Update - ずかんリンク)
+
+35. **リザルト・報酬システムの実装（Phase 4完了）**
+    *   内容: ゲームクリア時の報酬抽選とリザルト画面を実装。12種類のエサ（3段階のレアリティ）とランク別のドロップテーブル（S:キャラ80%/エサ100%、A:60%/90%、B:40%/80%、C:20%/60%、D:10%/40%）を定義。報酬計算ロジック（コイン、経験値、キャラ、エサ）とランク別の抽選ロジック（高ランクほどレアキャラ・レアエサ出現率UP）を実装。RewardDisplay（順次アニメーション、NEWバッジ、キラキラエフェクト）コンポーネントとリザルト画面（ランク表示、スコアサマリー、報酬表示）を作成。読み・書き攻略モードのリザルトダイアログに「ほうびをもらう」ボタンを追加し、URLパラメータでゲーム結果を渡す仕組みを実装。Suspense境界でuseSearchParamsに対応。Phase 4 を完了し、**基本的なゲームループ（プレイ→リザルト→報酬獲得→図鑑確認）を完成**。
+    *   対象:
+        *   `lib/data/reward-data.ts` (New - エサ、ドロップテーブル、報酬計算)
+        *   `components/result/RewardDisplay.tsx` (New)
+        *   `app/result/page.tsx` (New - リザルト画面)
+        *   `app/play/reading/[stage]/page.tsx` (Update - リザルトリンク)
+        *   `app/play/writing/[set]/page.tsx` (Update - リザルトリンク)
+

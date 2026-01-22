@@ -92,7 +92,7 @@ export default async function Home() {
 
       {/* フッター */}
       <footer className="text-center text-sm text-muted-foreground">
-        <p>バージョン 0.1.0 (Phase 2.3)</p>
+        <p>バージョン 0.2.0 (Phase 4完了)</p>
       </footer>
     </main>
   )
