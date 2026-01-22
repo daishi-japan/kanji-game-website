@@ -53,9 +53,11 @@ export default async function Home() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-8">
           {/* 読み攻略モード */}
-          <button className="game-button bg-primary">
-            よむ（おちもの）
-          </button>
+          <Link href="/play/reading">
+            <button className="game-button bg-primary w-full">
+              よむ（おちもの）
+            </button>
+          </Link>
 
           {/* 書き攻略モード */}
           <button className="game-button bg-secondary" style={{backgroundColor: 'var(--color-secondary)'}}>
