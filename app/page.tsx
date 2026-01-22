@@ -60,9 +60,11 @@ export default async function Home() {
           </Link>
 
           {/* 書き攻略モード */}
-          <button className="game-button bg-secondary" style={{backgroundColor: 'var(--color-secondary)'}}>
-            かく（おうぎ）
-          </button>
+          <Link href="/play/writing">
+            <button className="game-button bg-secondary w-full" style={{backgroundColor: 'var(--color-secondary)'}}>
+              かく（おうぎ）
+            </button>
+          </Link>
         </div>
 
         {/* サブメニュー */}
@@ -88,7 +90,7 @@ export default async function Home() {
 
       {/* フッター */}
       <footer className="text-center text-sm text-muted-foreground">
-        <p>バージョン 0.1.0 (Phase 2.1)</p>
+        <p>バージョン 0.1.0 (Phase 2.3)</p>
       </footer>
     </main>
   )

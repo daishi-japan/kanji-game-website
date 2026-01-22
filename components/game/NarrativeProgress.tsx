@@ -1,13 +1,13 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Gift, Flag } from 'lucide-react'
+import { Gift, Flag, Award } from 'lucide-react'
 
 interface NarrativeProgressProps {
   current: number
   total: number
   characterIcon?: string
-  goalIcon?: 'treasure' | 'flag'
+  goalIcon?: 'treasure' | 'flag' | 'certificate'
   showLabel?: boolean
 }
 
@@ -78,6 +78,8 @@ export function NarrativeProgress({
         <div className="absolute right-2 top-1/2 -translate-y-1/2 z-10">
           {goalIcon === 'treasure' ? (
             <Gift className="w-6 h-6 text-yellow-500" />
+          ) : goalIcon === 'certificate' ? (
+            <Award className="w-6 h-6 text-yellow-500" />
           ) : (
             <Flag className="w-6 h-6 text-success" />
           )}
