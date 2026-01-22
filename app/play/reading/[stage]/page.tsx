@@ -212,15 +212,25 @@ export default function ReadingGamePage({
               </div>
             </div>
 
-            <div className="flex gap-4">
-              <GameButton onClick={handleRetry} size="lg" className="flex-1">
-                もう いちど
-              </GameButton>
-              <Link href="/play/reading" className="flex-1">
-                <GameButton size="lg" variant="secondary" className="w-full">
-                  ステージせんたく
+            <div className="flex flex-col gap-4">
+              <Link
+                href={`/result?mode=reading&stage=${stage.id}&score=${gameState.score}&maxScore=${maxScore}&rank=${rank}&cleared=${gameState.isCleared}`}
+                className="w-full"
+              >
+                <GameButton size="lg" className="w-full">
+                  ほうびを もらう！
                 </GameButton>
               </Link>
+              <div className="grid grid-cols-2 gap-4">
+                <GameButton onClick={handleRetry} size="lg" variant="secondary">
+                  もう いちど
+                </GameButton>
+                <Link href="/play/reading">
+                  <GameButton size="lg" variant="secondary" className="w-full">
+                    ステージせんたく
+                  </GameButton>
+                </Link>
+              </div>
             </div>
           </div>
         </EmotiveDialog>
