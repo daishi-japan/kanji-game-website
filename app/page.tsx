@@ -69,9 +69,11 @@ export default async function Home() {
 
         {/* サブメニュー */}
         <div className="grid grid-cols-2 gap-4 pt-8">
-          <button className="px-6 py-3 text-lg font-bold bg-muted text-foreground rounded-full hover:opacity-90 transition-all">
-            ずかん
-          </button>
+          <Link href="/collection">
+            <button className="px-6 py-3 text-lg font-bold bg-muted text-foreground rounded-full hover:opacity-90 transition-all w-full">
+              ずかん
+            </button>
+          </Link>
           <button className="px-6 py-3 text-lg font-bold bg-muted text-foreground rounded-full hover:opacity-90 transition-all">
             マイルーム
           </button>
