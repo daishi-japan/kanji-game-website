@@ -43,9 +43,10 @@ export async function middleware(request: NextRequest) {
   // 登録ページと保護者認証ページは除外
   const isRegisterPage = request.nextUrl.pathname === '/register'
   const isParentAuthPage = request.nextUrl.pathname === '/parent/auth'
+  const isDemoPage = request.nextUrl.pathname === '/demo'
 
-  // 未認証ユーザーの処理
-  if (!user && !isRegisterPage && request.nextUrl.pathname !== '/') {
+  // 未認証ユーザーの処理（デモページは除外）
+  if (!user && !isRegisterPage && !isDemoPage && request.nextUrl.pathname !== '/') {
     // 未認証で登録ページ以外にアクセスしようとした場合、登録ページへリダイレクト
     const url = request.nextUrl.clone()
     url.pathname = '/register'
