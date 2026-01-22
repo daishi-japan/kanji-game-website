@@ -74,9 +74,11 @@ export default async function Home() {
               ずかん
             </button>
           </Link>
-          <button className="px-6 py-3 text-lg font-bold bg-muted text-foreground rounded-full hover:opacity-90 transition-all">
-            マイルーム
-          </button>
+          <Link href="/room">
+            <button className="px-6 py-3 text-lg font-bold bg-muted text-foreground rounded-full hover:opacity-90 transition-all w-full">
+              マイルーム
+            </button>
+          </Link>
         </div>
 
         {/* デモページリンク（開発用） */}

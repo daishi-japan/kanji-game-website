@@ -7,7 +7,9 @@ import { ArrowLeft, Heart, Star, Zap, Lock, TrendingUp } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { getCharacterById, getEvolutionChain, rarityConfig } from '@/lib/data/character-data'
 import { GameButton } from '@/components/game/GameButton'
-import { getCharacterDetails } from '@/app/actions/game'
+import { getCharacterDetails, feedCharacter, evolveCharacter, getUserInventory } from '@/app/actions/game'
+import { FeedingInterface } from '@/components/character/FeedingInterface'
+import { EvolutionDialog } from '@/components/character/EvolutionDialog'
 
 export default function CharacterDetailPage({
   params,
@@ -25,6 +27,10 @@ export default function CharacterDetailPage({
   const [friendship, setFriendship] = useState(0)
   const [experience, setExperience] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
+  const [showFeedingUI, setShowFeedingUI] = useState(false)
+  const [showEvolutionDialog, setShowEvolutionDialog] = useState(false)
+  const [evolvedToId, setEvolvedToId] = useState<string | null>(null)
+  const [userFoods, setUserFoods] = useState<{ foodId: string; amount: number }[]>([])
 
   // キャラクター詳細を取得
   useEffect(() => {
@@ -43,6 +49,59 @@ export default function CharacterDetailPage({
 
     fetchCharacterDetails()
   }, [resolvedParams.characterId])
+
+  // ユーザーのエサ一覧を取得
+  useEffect(() => {
+    const fetchInventory = async () => {
+      const response = await getUserInventory()
+      if (response.success && response.data) {
+        setUserFoods(response.data.foods)
+      }
+    }
+
+    if (isOwned) {
+      fetchInventory()
+    }
+  }, [isOwned])
+
+  // エサやり処理
+  const handleFeed = async (foodId: string) => {
+    const response = await feedCharacter(resolvedParams.characterId, foodId)
+
+    if (response.success && response.data) {
+      setLevel(response.data.newLevel)
+      setExperience(response.data.newExperience)
+      setFriendship(response.data.newFriendship)
+
+      // エサの数を更新
+      const inventoryResponse = await getUserInventory()
+      if (inventoryResponse.success && inventoryResponse.data) {
+        setUserFoods(inventoryResponse.data.foods)
+      }
+    }
+
+    return response
+  }
+
+  // 進化処理
+  const handleEvolve = async () => {
+    const response = await evolveCharacter(resolvedParams.characterId)
+
+    if (response.success && response.data) {
+      setEvolvedToId(response.data.newCharacterId)
+      setShowEvolutionDialog(true)
+    } else {
+      alert(response.error || '進化に失敗しました')
+    }
+  }
+
+  // 進化ダイアログを閉じた後、新しいキャラクターページへ遷移
+  const handleEvolutionDialogClose = () => {
+    setShowEvolutionDialog(false)
+    if (evolvedToId) {
+      router.push(`/collection/${evolvedToId}`)
+    }
+  }
 
   // ローディング中の表示
   if (isLoading) {
@@ -274,7 +333,7 @@ export default function CharacterDetailPage({
             {/* 進化ボタン */}
             {canEvolve && (
               <div className="mt-6 text-center">
-                <GameButton size="lg" onClick={() => alert('進化機能は Phase 3.2 で実装予定')}>
+                <GameButton size="lg" onClick={handleEvolve}>
                   <TrendingUp className="w-5 h-5 mr-2" />
                   しんか する！
                 </GameButton>
@@ -303,14 +362,36 @@ export default function CharacterDetailPage({
             </GameButton>
           </Link>
           {isOwned && (
-            <GameButton
-              className="flex-1"
-              onClick={() => alert('エサやり機能は Phase 3.2 で実装予定')}
-            >
+            <GameButton className="flex-1" onClick={() => setShowFeedingUI(true)}>
               エサを あげる
             </GameButton>
           )}
         </div>
+
+        {/* エサやりUI */}
+        {showFeedingUI && character && (
+          <FeedingInterface
+            characterId={character.id}
+            characterName={character.name}
+            characterEmoji={character.emoji}
+            currentLevel={level}
+            currentExperience={experience}
+            currentFriendship={friendship}
+            userFoods={userFoods}
+            onFeed={handleFeed}
+            onClose={() => setShowFeedingUI(false)}
+          />
+        )}
+
+        {/* 進化ダイアログ */}
+        {character && character.evolutionTo && evolvedToId && (
+          <EvolutionDialog
+            fromCharacterId={character.id}
+            toCharacterId={evolvedToId}
+            onClose={handleEvolutionDialogClose}
+            isOpen={showEvolutionDialog}
+          />
+        )}
       </div>
     </main>
   )
