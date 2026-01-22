@@ -1,25 +1,34 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, BookOpen, Award } from 'lucide-react'
 import { CharacterGrid } from '@/components/collection/CharacterGrid'
 import { characterDatabase, calculateCollectionRate } from '@/lib/data/character-data'
+import { getOwnedCharacters } from '@/app/actions/game'
 import type { CharacterData } from '@/lib/data/character-data'
 
 export default function CollectionPage() {
   const router = useRouter()
 
-  // デモ用：実際はSupabaseから取得
-  // 開発用に最初の5体を所持済みとする
-  const [ownedCharacterIds] = useState<string[]>([
-    'char_001',
-    'char_002',
-    'char_004',
-    'char_006',
-    'char_008',
-  ])
+  const [ownedCharacterIds, setOwnedCharacterIds] = useState<string[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  // 所持キャラクターを取得
+  useEffect(() => {
+    const fetchOwnedCharacters = async () => {
+      const response = await getOwnedCharacters()
+
+      if (response.success && response.data) {
+        setOwnedCharacterIds(response.data.characterIds)
+      }
+
+      setIsLoading(false)
+    }
+
+    fetchOwnedCharacters()
+  }, [])
 
   const collectionRate = calculateCollectionRate(ownedCharacterIds)
 

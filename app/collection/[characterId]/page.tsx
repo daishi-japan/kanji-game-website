@@ -1,12 +1,13 @@
 'use client'
 
-import { use, useState } from 'react'
+import { use, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Heart, Star, Zap, Lock, TrendingUp } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { getCharacterById, getEvolutionChain, rarityConfig } from '@/lib/data/character-data'
 import { GameButton } from '@/components/game/GameButton'
+import { getCharacterDetails } from '@/app/actions/game'
 
 export default function CharacterDetailPage({
   params,
@@ -19,14 +20,40 @@ export default function CharacterDetailPage({
   const character = getCharacterById(resolvedParams.characterId)
   const evolutionChain = character ? getEvolutionChain(character.id) : []
 
-  // デモ用：実際はSupabaseから取得
-  const [isOwned] = useState(
-    ['char_001', 'char_002', 'char_004', 'char_006', 'char_008'].includes(
-      resolvedParams.characterId
+  const [isOwned, setIsOwned] = useState(false)
+  const [level, setLevel] = useState(1)
+  const [friendship, setFriendship] = useState(0)
+  const [experience, setExperience] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
+
+  // キャラクター詳細を取得
+  useEffect(() => {
+    const fetchCharacterDetails = async () => {
+      const response = await getCharacterDetails(resolvedParams.characterId)
+
+      if (response.success && response.data) {
+        setIsOwned(response.data.isOwned)
+        setLevel(response.data.level)
+        setFriendship(response.data.friendship)
+        setExperience(response.data.experience)
+      }
+
+      setIsLoading(false)
+    }
+
+    fetchCharacterDetails()
+  }, [resolvedParams.characterId])
+
+  // ローディング中の表示
+  if (isLoading) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-purple-100 to-background p-8">
+        <div className="max-w-4xl mx-auto text-center space-y-6">
+          <p className="text-2xl font-bold">よみこみちゅう...</p>
+        </div>
+      </main>
     )
-  )
-  const [level] = useState(10)
-  const [friendship] = useState(50)
+  }
 
   if (!character) {
     return (

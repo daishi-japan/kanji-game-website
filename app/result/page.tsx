@@ -7,7 +7,7 @@ import { Trophy, Star, Target, Zap } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { GameButton } from '@/components/game/GameButton'
 import { RewardDisplay } from '@/components/result/RewardDisplay'
-import { calculateRewards } from '@/lib/data/reward-data'
+import { submitGameResult } from '@/app/actions/game'
 import type { GameResult, RewardItem } from '@/lib/data/reward-data'
 
 function ResultContent() {
@@ -24,25 +24,41 @@ function ResultContent() {
 
   const [showRewards, setShowRewards] = useState(false)
   const [rewards, setRewards] = useState<RewardItem[]>([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  // 報酬計算
+  // ゲーム結果送信と報酬取得
   useEffect(() => {
-    const result: GameResult = {
-      mode,
-      stageId,
-      score,
-      maxScore,
-      rank,
-      cleared,
+    const submitResult = async () => {
+      const result: GameResult = {
+        mode,
+        stageId,
+        score,
+        maxScore,
+        rank,
+        cleared,
+      }
+
+      setIsSubmitting(true)
+
+      // Server Actionを呼び出してゲーム結果を送信
+      const response = await submitGameResult(result)
+
+      if (response.success && response.data) {
+        setRewards(response.data.rewards)
+
+        // 1秒後に報酬表示
+        setTimeout(() => {
+          setShowRewards(true)
+        }, 1000)
+      } else {
+        setError(response.error || '報酬の取得に失敗しました')
+      }
+
+      setIsSubmitting(false)
     }
 
-    const calculatedRewards = calculateRewards(result)
-    setRewards(calculatedRewards)
-
-    // 1秒後に報酬表示
-    setTimeout(() => {
-      setShowRewards(true)
-    }, 1000)
+    submitResult()
   }, [mode, stageId, score, maxScore, rank, cleared])
 
   // ランク別のメッセージ
@@ -78,6 +94,21 @@ function ResultContent() {
   }
 
   const percentage = Math.round((score / maxScore) * 100)
+
+  // エラー表示
+  if (error) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-red-100 to-background p-8">
+        <div className="max-w-4xl mx-auto text-center space-y-6">
+          <p className="text-2xl font-bold text-red-600">エラーが はっせい しました</p>
+          <p className="text-lg text-muted-foreground">{error}</p>
+          <Link href="/">
+            <GameButton size="lg">ホームへ もどる</GameButton>
+          </Link>
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-yellow-100 to-background p-8">
