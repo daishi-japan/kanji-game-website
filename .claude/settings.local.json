@@ -15,7 +15,8 @@
       "Bash(ls:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(git diff:*)"
     ]
   }
 }

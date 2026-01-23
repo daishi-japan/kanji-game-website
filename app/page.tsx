@@ -1,28 +1,64 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { Calendar } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { LoginBonusModal } from '@/components/daily/LoginBonusModal'
+import { DailyMissions } from '@/components/daily/DailyMissions'
+import { checkLoginBonus } from '@/app/actions/daily'
 
-export default async function Home() {
-  const supabase = await createClient()
+export default function Home() {
+  const [userName, setUserName] = useState('プレイヤー')
+  const [showLoginBonus, setShowLoginBonus] = useState(false)
+  const [loginBonusData, setLoginBonusData] = useState({
+    loginStreak: 1,
+    bonusCoins: 0,
+    bonusFood: undefined as
+      | { foodId: string; name: string; emoji: string; amount: number }
+      | undefined,
+  })
+  const [showMissions, setShowMissions] = useState(false)
 
-  // ユーザー情報取得
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const supabase = createClient()
 
-  // 未認証の場合は登録ページへ
-  if (!user) {
-    redirect('/register')
-  }
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
 
-  // プロフィール取得
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('name')
-    .eq('id', user.id)
-    .single()
+      if (!user) {
+        window.location.href = '/register'
+        return
+      }
 
-  const userName = profile?.name || 'プレイヤー'
+      // プロフィール取得
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', user.id)
+        .single()
+
+      setUserName(profile?.name || 'プレイヤー')
+
+      // ログインボーナスチェック
+      const bonusResponse = await checkLoginBonus()
+      if (bonusResponse.success && bonusResponse.data) {
+        if (bonusResponse.data.isNewDay) {
+          // 新しい日のログイン：ボーナスモーダルを表示
+          setLoginBonusData({
+            loginStreak: bonusResponse.data.loginStreak,
+            bonusCoins: bonusResponse.data.bonusCoins,
+            bonusFood: bonusResponse.data.bonusFood,
+          })
+          setShowLoginBonus(true)
+        }
+      }
+    }
+
+    fetchUserData()
+  }, [])
 
   return (
     <main className="flex min-h-screen flex-col p-8">
@@ -32,20 +68,38 @@ export default async function Home() {
           <p className="text-sm text-muted-foreground">ようこそ</p>
           <h2 className="text-2xl font-bold">{userName}さん</h2>
         </div>
-        <Link
-          href="/parent/auth"
-          className="px-4 py-2 text-sm font-medium bg-muted text-muted-foreground rounded-lg hover:opacity-90 transition-all"
-        >
-          おとなメニュー
-        </Link>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowMissions(!showMissions)}
+            className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-all flex items-center gap-2"
+          >
+            <Calendar className="w-4 h-4" />
+            デイリー
+          </button>
+          <Link
+            href="/parent/auth"
+            className="px-4 py-2 text-sm font-medium bg-muted text-muted-foreground rounded-lg hover:opacity-90 transition-all"
+          >
+            おとなメニュー
+          </Link>
+        </div>
       </header>
+
+      {/* デイリーミッション */}
+      {showMissions && (
+        <div className="mb-8 bg-white rounded-2xl p-6 shadow-lg">
+          <div className="flex items-center gap-2 mb-4">
+            <Calendar className="w-6 h-6 text-primary" />
+            <h2 className="text-2xl font-bold">きょうの ミッション</h2>
+          </div>
+          <DailyMissions />
+        </div>
+      )}
 
       {/* メインコンテンツ */}
       <div className="flex-1 flex flex-col items-center justify-center space-y-8">
         <div className="text-center space-y-4">
-          <h1 className="text-5xl font-bold text-primary">
-            あつまれ！漢字の森
-          </h1>
+          <h1 className="text-5xl font-bold text-primary">あつまれ！漢字の森</h1>
           <p className="text-2xl text-muted-foreground">
             きょうも ぼうけんに でかけよう！
           </p>
@@ -54,14 +108,15 @@ export default async function Home() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-8">
           {/* 読み攻略モード */}
           <Link href="/play/reading">
-            <button className="game-button bg-primary w-full">
-              よむ（おちもの）
-            </button>
+            <button className="game-button bg-primary w-full">よむ（おちもの）</button>
           </Link>
 
           {/* 書き攻略モード */}
           <Link href="/play/writing">
-            <button className="game-button bg-secondary w-full" style={{backgroundColor: 'var(--color-secondary)'}}>
+            <button
+              className="game-button bg-secondary w-full"
+              style={{ backgroundColor: 'var(--color-secondary)' }}
+            >
               かく（おうぎ）
             </button>
           </Link>
@@ -94,8 +149,17 @@ export default async function Home() {
 
       {/* フッター */}
       <footer className="text-center text-sm text-muted-foreground">
-        <p>バージョン 0.2.0 (Phase 4完了)</p>
+        <p>バージョン 0.3.0 (Phase 6完了)</p>
       </footer>
+
+      {/* ログインボーナスモーダル */}
+      <LoginBonusModal
+        isOpen={showLoginBonus}
+        loginStreak={loginBonusData.loginStreak}
+        bonusCoins={loginBonusData.bonusCoins}
+        bonusFood={loginBonusData.bonusFood}
+        onClose={() => setShowLoginBonus(false)}
+      />
     </main>
   )
 }
