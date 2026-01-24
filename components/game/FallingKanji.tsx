@@ -5,11 +5,18 @@ import { motion } from 'framer-motion'
 interface FallingKanjiProps {
   character: string
   isActive: boolean
+  onFallComplete?: () => void
+  fallDuration?: number
 }
 
-export function FallingKanji({ character, isActive }: FallingKanjiProps) {
+export function FallingKanji({
+  character,
+  isActive,
+  onFallComplete,
+  fallDuration = 3,
+}: FallingKanjiProps) {
   return (
-    <div className="relative w-full h-64 overflow-hidden bg-gradient-to-b from-sky-100 to-transparent rounded-2xl">
+    <div className="relative w-full flex-1 overflow-hidden bg-gradient-to-b from-sky-100 to-transparent rounded-2xl">
       {/* 背景装飾（雲） */}
       <div className="absolute inset-0">
         {[...Array(3)].map((_, i) => (
@@ -37,13 +44,12 @@ export function FallingKanji({ character, isActive }: FallingKanjiProps) {
         <motion.div
           className="absolute left-1/2 -translate-x-1/2"
           initial={{ y: -100, opacity: 0 }}
-          animate={{ y: 200, opacity: 1 }}
+          animate={{ y: '100vh', opacity: 1 }}
           transition={{
-            duration: 3,
-            repeat: Infinity,
-            repeatType: 'loop',
+            duration: fallDuration,
             ease: 'linear',
           }}
+          onAnimationComplete={onFallComplete}
         >
           <div className="relative">
             {/* 光のエフェクト */}

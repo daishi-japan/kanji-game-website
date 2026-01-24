@@ -4,8 +4,8 @@ import { ArrowLeft, Lock } from 'lucide-react'
 
 export default function ReadingStageSelectPage() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-sky-100 to-background p-8">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <main className="min-h-screen bg-gradient-to-b from-sky-100 to-background p-8 flex flex-col">
+      <div className="max-w-4xl mx-auto space-y-8 flex-1 flex flex-col justify-center">
         {/* ヘッダー */}
         <div className="flex items-center gap-4">
           <Link

@@ -27,7 +27,7 @@ export interface GameConfig {
 
 export const defaultGameConfig: GameConfig = {
   maxLives: 3,
-  timeLimit: 60,
+  timeLimit: 120, // 10問 × 12秒/問 = 120秒
   baseScore: 1, // 1問正解 = 1点
   comboBonus: 0, // 使用しない
   timeBonusRate: 0, // 使用しない
