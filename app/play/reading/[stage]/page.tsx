@@ -11,7 +11,6 @@ import {
   updateTimer,
   startGame,
   retryGame,
-  getScoreRank,
   calculateMaxScore,
   GameState,
 } from '@/lib/game/reading-game-logic'
@@ -73,9 +72,7 @@ export default function ReadingGamePage({
     setGameState(newState)
 
     if (isCorrect) {
-      setFeedbackMessage(
-        `せいかい！+${earnedScore}てん ${newState.combo > 1 ? `コンボ×${newState.combo}` : ''}`
-      )
+      setFeedbackMessage(`せいかい！`)
     } else {
       setFeedbackMessage('ざんねん…もう いちど がんばろう！')
     }
@@ -102,7 +99,6 @@ export default function ReadingGamePage({
   }
 
   const maxScore = calculateMaxScore(kanjis)
-  const rank = getScoreRank(gameState.score, maxScore)
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-sky-100 to-background p-4">
@@ -145,7 +141,6 @@ export default function ReadingGamePage({
               lives={gameState.lives}
               maxLives={3}
               timeRemaining={gameState.timeRemaining}
-              combo={gameState.combo}
             />
 
             {/* 進捗 */}
@@ -191,14 +186,12 @@ export default function ReadingGamePage({
         >
           <div className="space-y-4">
             <div className="text-center space-y-2">
-              <p className="text-6xl font-bold text-primary">
-                ランク: {rank}
-              </p>
-              <p className="text-3xl font-bold">
-                スコア: {gameState.score} / {maxScore}
+              <p className="text-5xl font-bold text-primary">
+                せいかい: {gameState.score} / {maxScore}
               </p>
             </div>
 
+            {/* ===== Phase 2以降の機能：コメントアウト開始 =====
             <div className="grid grid-cols-2 gap-4 text-left">
               <div>
                 <p className="text-sm text-muted-foreground">せいかいすう</p>
@@ -211,16 +204,19 @@ export default function ReadingGamePage({
                 <p className="text-2xl font-bold">×{gameState.combo}</p>
               </div>
             </div>
+            ===== コメントアウト終了 ===== */}
 
             <div className="flex flex-col gap-4">
+              {/* ===== Phase 2以降の機能：コメントアウト開始 =====
               <Link
-                href={`/result?mode=reading&stage=${stage.id}&score=${gameState.score}&maxScore=${maxScore}&rank=${rank}&cleared=${gameState.isCleared}`}
+                href={`/result?mode=reading&stage=${stage.id}&score=${gameState.score}&maxScore=${maxScore}&rank=C&cleared=${gameState.isCleared}`}
                 className="w-full"
               >
                 <GameButton size="lg" className="w-full">
                   ほうびを もらう！
                 </GameButton>
               </Link>
+              ===== コメントアウト終了 ===== */}
               <div className="grid grid-cols-2 gap-4">
                 <GameButton onClick={handleRetry} size="lg" variant="secondary">
                   もう いちど

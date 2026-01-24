@@ -11,7 +11,7 @@ export type ActionResult<T = void> = {
 }
 
 /**
- * ゲーム結果を送信し、報酬を付与
+ * ゲーム結果を送信し、報酬を付与（簡略版）
  */
 export async function submitGameResult(
   result: GameResult
@@ -28,23 +28,17 @@ export async function submitGameResult(
       return { success: false, error: '認証が必要です' }
     }
 
-    // 報酬計算
+    // 報酬計算（コインのみ）
     const rewards = calculateRewards(result)
 
-    // RPC関数を呼び出してゲーム結果を保存し、報酬を付与
+    // 簡略版RPC関数を呼び出してゲーム結果を保存
+    // Note: kanji_idはダミー値（将来的に実装予定）
     const { data, error } = await supabase.rpc('rpc_finish_game', {
       p_user_id: user.id,
       p_mode: result.mode,
-      p_stage_id: result.stageId,
+      p_kanji_id: '00000000-0000-0000-0000-000000000000', // ダミーUUID
       p_score: result.score,
-      p_max_score: result.maxScore,
-      p_rank: result.rank,
-      p_cleared: result.cleared,
-      p_rewards: rewards.map((r) => ({
-        type: r.type,
-        item_id: r.id,
-        amount: r.amount,
-      })),
+      p_is_correct: result.cleared,
     })
 
     if (error) {

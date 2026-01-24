@@ -8,7 +8,7 @@ interface GameHUDProps {
   lives: number
   maxLives: number
   timeRemaining: number
-  combo: number
+  combo?: number // オプショナルに変更
 }
 
 export function GameHUD({
@@ -16,7 +16,7 @@ export function GameHUD({
   lives,
   maxLives,
   timeRemaining,
-  combo,
+  combo = 0, // デフォルト値
 }: GameHUDProps) {
   // 時間の色（残り時間で変化）
   const timeColor =
@@ -28,7 +28,7 @@ export function GameHUD({
 
   return (
     <div className="w-full bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-lg">
-      <div className="grid grid-cols-4 gap-4 items-center">
+      <div className="grid grid-cols-3 gap-4 items-center">
         {/* スコア */}
         <div className="flex items-center gap-2">
           <Star className="w-6 h-6 text-yellow-500 fill-yellow-500" />
@@ -89,7 +89,7 @@ export function GameHUD({
           </div>
         </div>
 
-        {/* コンボ */}
+        {/* ===== Phase 2以降の機能：コメントアウト開始 =====
         <div className="flex items-center gap-2">
           <div>
             <p className="text-xs text-muted-foreground">コンボ</p>
@@ -104,6 +104,7 @@ export function GameHUD({
             </motion.p>
           </div>
         </div>
+        ===== コメントアウト終了 ===== */}
       </div>
     </div>
   )

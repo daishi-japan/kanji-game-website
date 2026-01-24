@@ -2,23 +2,27 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Calendar } from 'lucide-react'
+// ===== Phase 2以降の機能：コメントアウト開始 =====
+// import { Calendar } from 'lucide-react'
+// import { LoginBonusModal } from '@/components/daily/LoginBonusModal'
+// import { DailyMissions } from '@/components/daily/DailyMissions'
+// import { checkLoginBonus } from '@/app/actions/daily'
+// ===== コメントアウト終了 =====
 import { createClient } from '@/lib/supabase/client'
-import { LoginBonusModal } from '@/components/daily/LoginBonusModal'
-import { DailyMissions } from '@/components/daily/DailyMissions'
-import { checkLoginBonus } from '@/app/actions/daily'
 
 export default function Home() {
   const [userName, setUserName] = useState('プレイヤー')
-  const [showLoginBonus, setShowLoginBonus] = useState(false)
-  const [loginBonusData, setLoginBonusData] = useState({
-    loginStreak: 1,
-    bonusCoins: 0,
-    bonusFood: undefined as
-      | { foodId: string; name: string; emoji: string; amount: number }
-      | undefined,
-  })
-  const [showMissions, setShowMissions] = useState(false)
+  // ===== Phase 2以降の機能：コメントアウト開始 =====
+  // const [showLoginBonus, setShowLoginBonus] = useState(false)
+  // const [loginBonusData, setLoginBonusData] = useState({
+  //   loginStreak: 1,
+  //   bonusCoins: 0,
+  //   bonusFood: undefined as
+  //     | { foodId: string; name: string; emoji: string; amount: number }
+  //     | undefined,
+  // })
+  // const [showMissions, setShowMissions] = useState(false)
+  // ===== コメントアウト終了 =====
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -42,19 +46,21 @@ export default function Home() {
 
       setUserName(profile?.name || 'プレイヤー')
 
-      // ログインボーナスチェック
-      const bonusResponse = await checkLoginBonus()
-      if (bonusResponse.success && bonusResponse.data) {
-        if (bonusResponse.data.isNewDay) {
-          // 新しい日のログイン：ボーナスモーダルを表示
-          setLoginBonusData({
-            loginStreak: bonusResponse.data.loginStreak,
-            bonusCoins: bonusResponse.data.bonusCoins,
-            bonusFood: bonusResponse.data.bonusFood,
-          })
-          setShowLoginBonus(true)
-        }
-      }
+      // ===== Phase 2以降の機能：コメントアウト開始 =====
+      // // ログインボーナスチェック
+      // const bonusResponse = await checkLoginBonus()
+      // if (bonusResponse.success && bonusResponse.data) {
+      //   if (bonusResponse.data.isNewDay) {
+      //     // 新しい日のログイン：ボーナスモーダルを表示
+      //     setLoginBonusData({
+      //       loginStreak: bonusResponse.data.loginStreak,
+      //       bonusCoins: bonusResponse.data.bonusCoins,
+      //       bonusFood: bonusResponse.data.bonusFood,
+      //     })
+      //     setShowLoginBonus(true)
+      //   }
+      // }
+      // ===== コメントアウト終了 =====
     }
 
     fetchUserData()
@@ -68,6 +74,7 @@ export default function Home() {
           <p className="text-sm text-muted-foreground">ようこそ</p>
           <h2 className="text-2xl font-bold">{userName}さん</h2>
         </div>
+        {/* ===== Phase 2以降の機能：コメントアウト開始 =====
         <div className="flex gap-2">
           <button
             onClick={() => setShowMissions(!showMissions)}
@@ -83,9 +90,10 @@ export default function Home() {
             おとなメニュー
           </Link>
         </div>
+        ===== コメントアウト終了 ===== */}
       </header>
 
-      {/* デイリーミッション */}
+      {/* ===== Phase 2以降の機能：コメントアウト開始 =====
       {showMissions && (
         <div className="mb-8 bg-white rounded-2xl p-6 shadow-lg">
           <div className="flex items-center gap-2 mb-4">
@@ -95,6 +103,7 @@ export default function Home() {
           <DailyMissions />
         </div>
       )}
+      ===== コメントアウト終了 ===== */}
 
       {/* メインコンテンツ */}
       <div className="flex-1 flex flex-col items-center justify-center space-y-8">
@@ -105,13 +114,13 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-8">
+        <div className="grid grid-cols-1 gap-6 pt-8 max-w-md mx-auto">
           {/* 読み攻略モード */}
           <Link href="/play/reading">
             <button className="game-button bg-primary w-full">よむ（おちもの）</button>
           </Link>
 
-          {/* 書き攻略モード */}
+          {/* ===== Phase 2以降の機能：コメントアウト開始 =====
           <Link href="/play/writing">
             <button
               className="game-button bg-secondary w-full"
@@ -120,9 +129,10 @@ export default function Home() {
               かく（おうぎ）
             </button>
           </Link>
+          ===== コメントアウト終了 ===== */}
         </div>
 
-        {/* サブメニュー */}
+        {/* ===== Phase 2以降の機能：コメントアウト開始 =====
         <div className="grid grid-cols-2 gap-4 pt-8">
           <Link href="/collection">
             <button className="px-6 py-3 text-lg font-bold bg-muted text-foreground rounded-full hover:opacity-90 transition-all w-full">
@@ -136,7 +146,6 @@ export default function Home() {
           </Link>
         </div>
 
-        {/* デモページリンク（開発用） */}
         <div className="pt-8">
           <Link
             href="/demo"
@@ -145,14 +154,15 @@ export default function Home() {
             🎨 コンポーネント デモ (Phase 2.1)
           </Link>
         </div>
+        ===== コメントアウト終了 ===== */}
       </div>
 
       {/* フッター */}
       <footer className="text-center text-sm text-muted-foreground">
-        <p>バージョン 0.3.0 (Phase 6完了)</p>
+        <p>バージョン 1.0.0 MVP（基本機能のみ）</p>
       </footer>
 
-      {/* ログインボーナスモーダル */}
+      {/* ===== Phase 2以降の機能：コメントアウト開始 =====
       <LoginBonusModal
         isOpen={showLoginBonus}
         loginStreak={loginBonusData.loginStreak}
@@ -160,6 +170,7 @@ export default function Home() {
         bonusFood={loginBonusData.bonusFood}
         onClose={() => setShowLoginBonus(false)}
       />
+      ===== コメントアウト終了 ===== */}
     </main>
   )
 }

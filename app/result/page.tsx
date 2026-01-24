@@ -27,7 +27,7 @@ function ResultContent() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // ゲーム結果送信と報酬取得
+  // ゲーム結果送信と報酬取得（簡略版）
   useEffect(() => {
     const submitResult = async () => {
       const result: GameResult = {
@@ -52,6 +52,8 @@ function ResultContent() {
           setShowRewards(true)
         }, 1000)
       } else {
+        // エラーが出てもゲームは続行可能（報酬なしで表示）
+        console.error('Submit error:', response.error)
         setError(response.error || '報酬の取得に失敗しました')
       }
 
@@ -149,7 +151,7 @@ function ResultContent() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
         >
-          {/* ランク表示 */}
+          {/* ===== Phase 2以降の機能：コメントアウト開始 =====
           <div className="text-center mb-8">
             <motion.div
               className="inline-block"
@@ -171,9 +173,10 @@ function ResultContent() {
             </motion.div>
             <p className="text-lg text-muted-foreground mt-2">ランク</p>
           </div>
+          ===== コメントアウト終了 ===== */}
 
           {/* スコア詳細 */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* スコア */}
             <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl">
               <div className="flex items-center justify-center gap-2 mb-2">
@@ -184,7 +187,7 @@ function ResultContent() {
               <p className="text-sm text-blue-600 mt-1">/ {maxScore}</p>
             </div>
 
-            {/* 達成率 */}
+            {/* ===== Phase 2以降の機能：コメントアウト開始 =====
             <div className="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <Target className="w-6 h-6 text-green-500" />
@@ -192,6 +195,7 @@ function ResultContent() {
               </div>
               <p className="text-4xl font-bold text-green-600">{percentage}%</p>
             </div>
+            ===== コメントアウト終了 ===== */}
 
             {/* クリア状況 */}
             <div className="text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl">
@@ -208,7 +212,7 @@ function ResultContent() {
             </div>
           </div>
 
-          {/* プログレスバー */}
+          {/* ===== Phase 2以降の機能：コメントアウト開始 =====
           <div className="mt-6">
             <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden">
               <motion.div
@@ -219,9 +223,10 @@ function ResultContent() {
               />
             </div>
           </div>
+          ===== コメントアウト終了 ===== */}
         </motion.div>
 
-        {/* 報酬表示 */}
+        {/* ===== Phase 2以降の機能：コメントアウト開始 =====
         <motion.div
           className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-lg"
           initial={{ opacity: 0, scale: 0.8 }}
@@ -233,6 +238,7 @@ function ResultContent() {
             isVisible={showRewards}
           />
         </motion.div>
+        ===== コメントアウト終了 ===== */}
 
         {/* アクションボタン */}
         <motion.div

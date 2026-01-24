@@ -3,7 +3,7 @@ import { KanjiData, generateChoices } from '../data/kanji-data'
 // ゲーム状態
 export interface GameState {
   currentKanjiIndex: number
-  score: number
+  score: number // 正解数
   lives: number
   timeRemaining: number // 秒
   isPlaying: boolean
@@ -11,7 +11,9 @@ export interface GameState {
   isCleared: boolean
   currentKanji: KanjiData | null
   choices: string[]
-  combo: number // 連続正解数
+  // ===== Phase 2以降の機能：コメントアウト開始 =====
+  // combo: number // 連続正解数
+  // ===== コメントアウト終了 =====
 }
 
 // ゲーム設定
@@ -26,9 +28,9 @@ export interface GameConfig {
 export const defaultGameConfig: GameConfig = {
   maxLives: 3,
   timeLimit: 60,
-  baseScore: 100,
-  comboBonus: 10,
-  timeBonusRate: 2,
+  baseScore: 1, // 1問正解 = 1点
+  comboBonus: 0, // 使用しない
+  timeBonusRate: 0, // 使用しない
 }
 
 // 初期状態を生成
@@ -48,7 +50,6 @@ export function createInitialState(
     isCleared: false,
     currentKanji: firstKanji,
     choices: firstKanji ? generateChoices(firstKanji) : [],
-    combo: 0,
   }
 }
 
@@ -70,10 +71,8 @@ export function checkAnswer(
   const isCorrect = selectedAnswer === state.currentKanji.reading
 
   if (isCorrect) {
-    // 正解時
-    const comboBonus = state.combo * config.comboBonus
-    const timeBonus = Math.floor(state.timeRemaining * config.timeBonusRate)
-    const earnedScore = config.baseScore + comboBonus + timeBonus
+    // 正解時（スコアは正解数のみ）
+    const earnedScore = 1
 
     const nextIndex = state.currentKanjiIndex + 1
     const isLastKanji = nextIndex >= kanjis.length
@@ -83,7 +82,6 @@ export function checkAnswer(
       ...state,
       currentKanjiIndex: nextIndex,
       score: state.score + earnedScore,
-      combo: state.combo + 1,
       currentKanji: nextKanji,
       choices: nextKanji ? generateChoices(nextKanji) : [],
       isCleared: isLastKanji,
@@ -99,7 +97,6 @@ export function checkAnswer(
     const newState: GameState = {
       ...state,
       lives: newLives,
-      combo: 0, // コンボリセット
       isGameOver,
       isPlaying: !isGameOver,
     }
@@ -139,38 +136,28 @@ export function retryGame(
   return createInitialState(kanjis, config)
 }
 
+// ===== Phase 2以降の機能：コメントアウト開始 =====
 // スコアランク判定
-export type ScoreRank = 'S' | 'A' | 'B' | 'C' | 'D'
+// export type ScoreRank = 'S' | 'A' | 'B' | 'C' | 'D'
+//
+// export function getScoreRank(
+//   score: number,
+//   maxScore: number
+// ): ScoreRank {
+//   const percentage = (score / maxScore) * 100
+//
+//   if (percentage >= 90) return 'S'
+//   if (percentage >= 80) return 'A'
+//   if (percentage >= 70) return 'B'
+//   if (percentage >= 60) return 'C'
+//   return 'D'
+// }
+// ===== コメントアウト終了 =====
 
-export function getScoreRank(
-  score: number,
-  maxScore: number
-): ScoreRank {
-  const percentage = (score / maxScore) * 100
-
-  if (percentage >= 90) return 'S'
-  if (percentage >= 80) return 'A'
-  if (percentage >= 70) return 'B'
-  if (percentage >= 60) return 'C'
-  return 'D'
-}
-
-// 最大スコア計算（全問正解、時間内）
+// 最大スコア計算（全問数）
 export function calculateMaxScore(
   kanjis: KanjiData[],
   config: GameConfig = defaultGameConfig
 ): number {
-  let maxScore = 0
-  let timeRemaining = config.timeLimit
-
-  for (let i = 0; i < kanjis.length; i++) {
-    const comboBonus = i * config.comboBonus
-    const timeBonus = Math.floor(timeRemaining * config.timeBonusRate)
-    maxScore += config.baseScore + comboBonus + timeBonus
-
-    // 各問題に平均5秒かかると仮定
-    timeRemaining = Math.max(0, timeRemaining - 5)
-  }
-
-  return maxScore
+  return kanjis.length // 問題数 = 最大スコア
 }
