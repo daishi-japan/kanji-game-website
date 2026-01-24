@@ -80,14 +80,16 @@ export default function ReadingGamePage({
 
   // カウントダウンタイマー
   useEffect(() => {
-    if (countdown === null || countdown === 0) return
+    if (countdown === null) return
 
     if (countdown > 0) {
       const timer = setTimeout(() => {
         setCountdown(countdown - 1)
       }, 1000)
       return () => clearTimeout(timer)
-    } else {
+    }
+
+    if (countdown === 0) {
       // カウントダウン終了：ゲーム開始
       if (gameState) {
         setGameState(startGame(gameState))
@@ -178,8 +180,8 @@ export default function ReadingGamePage({
   const maxScore = calculateMaxScore(kanjis)
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-sky-100 to-background p-4">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <main className="h-screen bg-gradient-to-b from-sky-100 to-background p-4 flex flex-col overflow-hidden">
+      <div className="max-w-7xl mx-auto flex-1 flex flex-col space-y-4 w-full">
         {/* ヘッダー */}
         <div className="flex items-center gap-4">
           <Link
@@ -196,39 +198,41 @@ export default function ReadingGamePage({
 
         {/* ゲーム未開始 */}
         {!gameState.isPlaying && !gameState.isGameOver && !gameState.isCleared && (
-          <div className="text-center space-y-6 py-12">
-            {countdown === null ? (
-              <>
-                <div className="space-y-4">
-                  <h2 className="text-3xl font-bold">じゅんびは いいかな？</h2>
-                  <p className="text-lg text-muted-foreground">
-                    {kanjis.length}この かんじを よんでね！
-                  </p>
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center space-y-6">
+              {countdown === null ? (
+                <>
+                  <div className="space-y-4">
+                    <h2 className="text-4xl font-bold">じゅんびは いいかな？</h2>
+                    <p className="text-xl text-muted-foreground">
+                      {kanjis.length}この かんじを よんでね！
+                    </p>
+                  </div>
+                  <GameButton size="lg" onClick={handleStartCountdown}>
+                    はじめる
+                  </GameButton>
+                </>
+              ) : countdown > 0 ? (
+                <div className="space-y-8">
+                  <h2 className="text-3xl font-bold text-muted-foreground">
+                    スタートまで...
+                  </h2>
+                  <div className="text-9xl font-bold text-primary animate-pulse">
+                    {countdown}
+                  </div>
                 </div>
-                <GameButton size="lg" onClick={handleStartCountdown}>
-                  はじめる
-                </GameButton>
-              </>
-            ) : countdown > 0 ? (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-muted-foreground">
-                  スタートまで...
-                </h2>
-                <div className="text-9xl font-bold text-primary animate-pulse">
-                  {countdown}
+              ) : (
+                <div className="text-6xl font-bold text-primary animate-bounce">
+                  スタート！
                 </div>
-              </div>
-            ) : (
-              <div className="text-5xl font-bold text-primary animate-bounce">
-                スタート！
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
 
         {/* ゲームプレイ中 */}
         {gameState.isPlaying && gameState.currentKanji && (
-          <>
+          <div className="flex-1 flex flex-col gap-4 min-h-0">
             {/* HUD */}
             <GameHUD
               score={gameState.score}
@@ -254,7 +258,7 @@ export default function ReadingGamePage({
             />
 
             {/* 回答ボタン */}
-            <div className="flex justify-center">
+            <div className="flex justify-center pb-2">
               <AnswerButtons
                 choices={gameState.choices}
                 onAnswer={handleAnswer}
@@ -270,7 +274,7 @@ export default function ReadingGamePage({
                 </div>
               </div>
             )}
-          </>
+          </div>
         )}
 
         {/* スコア集計アニメーション */}
