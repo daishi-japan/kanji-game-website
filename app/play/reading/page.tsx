@@ -1,104 +1,123 @@
+'use client'
+
 import Link from 'next/link'
-import { stages } from '@/lib/data/kanji-data'
-import { ArrowLeft, Lock } from 'lucide-react'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+
+type Grade = 1 | 2 | 3 | 4 | 5 | 6
+type Speed = 'slow' | 'normal' | 'fast'
 
 export default function ReadingStageSelectPage() {
+  const router = useRouter()
+  const [selectedGrade, setSelectedGrade] = useState<Grade | null>(null)
+  const [selectedSpeed, setSelectedSpeed] = useState<Speed | null>(null)
+
+  const grades: Grade[] = [1, 2, 3, 4, 5, 6]
+  const speeds: { id: Speed; label: string }[] = [
+    { id: 'slow', label: 'ゆっくり' },
+    { id: 'normal', label: 'ふつう' },
+    { id: 'fast', label: 'はやい' },
+  ]
+
+  const handleStart = () => {
+    if (selectedGrade && selectedSpeed) {
+      const stageId = `grade_${selectedGrade}_${selectedSpeed}`
+      router.push(`/play/reading/${stageId}`)
+    }
+  }
+
+  const canStart = selectedGrade !== null && selectedSpeed !== null
+
   return (
-    <main className="min-h-screen bg-gradient-to-b from-sky-100 to-background p-8 flex flex-col">
-      <div className="max-w-4xl mx-auto space-y-8 flex-1 flex flex-col justify-center">
-        {/* ヘッダー */}
-        <div className="flex items-center gap-4">
-          <Link
-            href="/"
-            className="p-2 bg-white rounded-full shadow-md hover:opacity-90 transition-all"
-          >
-            <ArrowLeft className="w-6 h-6" />
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold">よむ（おちもの）</h1>
-            <p className="text-muted-foreground">
-              ステージを えらんで ぼうけんに でかけよう！
-            </p>
+    <main className="relative min-h-screen w-full overflow-hidden bg-pattern flex flex-col items-center justify-between p-6 py-8">
+      {/* 上部コンテンツ */}
+      <div className="w-full max-w-2xl space-y-6">
+        {/* タイトル */}
+        <h1 className="text-5xl font-black text-orange-600 text-center mb-6">じゅんび</h1>
+        {/* 学年選択 */}
+        <div className="bg-white/90 rounded-[2.5rem] p-6 shadow-lg border-4 border-orange-200">
+          <div className="text-center mb-4">
+            <span className="inline-block bg-orange-100 text-orange-800 text-xl font-bold px-6 py-2 rounded-full">
+              がくねん
+            </span>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            {grades.map((grade) => (
+              <button
+                key={grade}
+                onClick={() => setSelectedGrade(grade)}
+                className={`py-3 px-6 rounded-full text-2xl font-black transition-all border-4 ${
+                  selectedGrade === grade
+                    ? 'bg-orange-500 text-white border-orange-600 shadow-lg'
+                    : 'bg-white text-orange-800 border-orange-300 hover:border-orange-400'
+                }`}
+              >
+                {grade}ねん
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* ステージ一覧 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {stages.map((stage, index) => {
-            const isLocked = false // 後で実装：前のステージをクリアしていないとロック
-
-            return (
-              <Link
-                key={stage.id}
-                href={isLocked ? '#' : `/play/reading/${stage.id}`}
-                className={`block ${isLocked ? 'pointer-events-none' : ''}`}
+        {/* 速さ選択 */}
+        <div className="bg-white/90 rounded-[2.5rem] p-6 shadow-lg border-4 border-orange-200">
+          <div className="text-center mb-4">
+            <span className="inline-block bg-orange-100 text-orange-800 text-xl font-bold px-6 py-2 rounded-full">
+              はやさ
+            </span>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            {speeds.map((speed) => (
+              <button
+                key={speed.id}
+                onClick={() => setSelectedSpeed(speed.id)}
+                className={`py-3 px-6 rounded-full text-2xl font-black transition-all border-4 ${
+                  selectedSpeed === speed.id
+                    ? 'bg-orange-500 text-white border-orange-600 shadow-lg'
+                    : 'bg-white text-orange-800 border-orange-300 hover:border-orange-400'
+                }`}
               >
-                <div
-                  className={`p-6 rounded-2xl shadow-lg transition-all hover:scale-105 ${
-                    isLocked
-                      ? 'bg-gray-300 opacity-50'
-                      : 'bg-white hover:shadow-xl'
-                  }`}
-                >
-                  {/* ステージ番号 */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="text-6xl font-bold text-primary/20">
-                      {index + 1}
-                    </div>
-                    {isLocked && <Lock className="w-8 h-8 text-gray-500" />}
-                  </div>
-
-                  {/* ステージ情報 */}
-                  <div className="space-y-2">
-                    <h2 className="text-2xl font-bold">{stage.name}</h2>
-                    <p className="text-lg text-muted-foreground">
-                      {stage.description}
-                    </p>
-
-                    {/* 難易度 */}
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">
-                        むずかしさ:
-                      </span>
-                      <div className="flex gap-1">
-                        {[...Array(3)].map((_, i) => (
-                          <div
-                            key={i}
-                            className={`w-2 h-6 rounded-full ${
-                              (stage.difficulty === 'easy' && i < 1) ||
-                              (stage.difficulty === 'normal' && i < 2) ||
-                              (stage.difficulty === 'hard' && i < 3)
-                                ? 'bg-primary'
-                                : 'bg-gray-300'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* 問題数 */}
-                    <p className="text-sm text-muted-foreground">
-                      もんだい: {stage.kanjiIds.length}こ
-                    </p>
-                  </div>
-
-                  {/* ボタン */}
-                  {!isLocked && (
-                    <button className="mt-4 w-full game-button">
-                      チャレンジ！
-                    </button>
-                  )}
-                </div>
-              </Link>
-            )
-          })}
-        </div>
-
-        {/* フッター */}
-        <div className="text-center text-sm text-muted-foreground">
-          <p>かんじの よみかたを おぼえよう！</p>
+                {speed.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
+
+      {/* 固定フッター */}
+      <div className="w-full max-w-2xl mx-auto px-6 space-y-3" style={{ marginTop: '40px' }}>
+        {/* スタートボタン */}
+        <div className="flex justify-center">
+          <button
+            onClick={handleStart}
+            disabled={!canStart}
+            className={`w-full max-w-md py-5 px-12 rounded-full text-3xl font-black text-white shadow-xl border-b-8 transition-all ${
+              canStart
+                ? 'bg-gradient-to-b from-green-500 to-green-600 border-green-800 hover:scale-105 active:border-b-0 active:translate-y-2'
+                : 'bg-gray-300 border-gray-400 cursor-not-allowed opacity-50'
+            }`}
+          >
+            スタート！
+          </button>
+        </div>
+
+        {/* もどるリンク */}
+        <div className="text-center pb-4">
+          <Link
+            href="/"
+            className="inline-block text-orange-800 text-xl font-bold hover:text-orange-600 transition-colors border-b-2 border-orange-800 hover:border-orange-600"
+          >
+            もどる
+          </Link>
+        </div>
+      </div>
+
+      <style jsx>{`
+        .bg-pattern {
+          background-color: #fff7ed;
+          background-image: radial-gradient(#fed7aa 2px, transparent 2px);
+          background-size: 30px 30px;
+        }
+      `}</style>
     </main>
   )
 }

@@ -18,7 +18,8 @@
       "Bash(echo:*)",
       "Bash(git diff:*)",
       "Bash(npm run dev:*)",
-      "Bash(node scripts/check-supabase.js:*)"
+      "Bash(node scripts/check-supabase.js:*)",
+      "Bash(wc:*)"
     ]
   }
 }

@@ -1,12 +1,14 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { useState } from 'react'
 
 interface FallingKanjiProps {
   character: string
   isActive: boolean
   onFallComplete?: () => void
   fallDuration?: number
+  feedbackType?: 'correct' | 'wrong' | 'miss' | null
 }
 
 export function FallingKanji({
@@ -14,37 +16,34 @@ export function FallingKanji({
   isActive,
   onFallComplete,
   fallDuration = 3,
+  feedbackType,
 }: FallingKanjiProps) {
-  return (
-    <div className="relative w-full flex-1 overflow-hidden bg-gradient-to-b from-sky-100 to-transparent rounded-2xl">
-      {/* 背景装飾（雲） */}
-      <div className="absolute inset-0">
-        {[...Array(3)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-20 h-10 bg-white/50 rounded-full"
-            style={{
-              left: `${20 + i * 30}%`,
-              top: `${10 + i * 20}%`,
-            }}
-            animate={{
-              x: [0, 10, 0],
-            }}
-            transition={{
-              duration: 3 + i,
-              repeat: Infinity,
-              repeatType: 'loop',
-            }}
-          />
-        ))}
-      </div>
+  // ランダムな水平位置を生成（20%〜80%の範囲）
+  const [horizontalPosition] = useState(() => {
+    return 20 + Math.random() * 60 // 20%から80%の間
+  })
 
+  // フィードバックに応じた表示内容
+  const getFeedbackContent = () => {
+    if (feedbackType === 'correct') {
+      return { borderColor: 'border-green-500', bgColor: 'bg-green-200', char: '⭕️' }
+    } else if (feedbackType === 'miss') {
+      return { borderColor: 'border-red-500', bgColor: 'bg-red-200', char: '💥' }
+    }
+    return { borderColor: 'border-orange-500', bgColor: 'bg-white', char: character }
+  }
+
+  const { borderColor, bgColor, char } = getFeedbackContent()
+
+  return (
+    <div className="relative w-full h-full overflow-hidden">
       {/* 落ちてくる漢字 */}
       {isActive && (
         <motion.div
-          className="absolute left-1/2 -translate-x-1/2"
-          initial={{ y: -100, opacity: 0 }}
-          animate={{ y: '100vh', opacity: 1 }}
+          className="absolute"
+          style={{ left: `${horizontalPosition}%`, top: 0 }}
+          initial={{ y: -140, opacity: 1, x: '-50%' }}
+          animate={{ y: 'calc(100vh - 400px)', opacity: 1 }}
           transition={{
             duration: fallDuration,
             ease: 'linear',
@@ -52,30 +51,15 @@ export function FallingKanji({
           onAnimationComplete={onFallComplete}
         >
           <div className="relative">
-            {/* 光のエフェクト */}
-            <motion.div
-              className="absolute inset-0 bg-primary/30 rounded-full blur-xl"
-              animate={{
-                scale: [1, 1.2, 1],
-                opacity: [0.3, 0.5, 0.3],
-              }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-                repeatType: 'loop',
-              }}
-            />
-
-            {/* 漢字本体 */}
-            <div className="relative text-8xl font-bold text-primary drop-shadow-2xl">
-              {character}
+            {/* 円形の枠と白背景 */}
+            <div className={`relative w-32 h-32 rounded-full ${bgColor} ${borderColor} border-8 shadow-2xl flex items-center justify-center`}>
+              <div className="text-6xl font-black text-orange-900">
+                {char}
+              </div>
             </div>
           </div>
         </motion.div>
       )}
-
-      {/* 地面（底部） */}
-      <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-green-500/20 to-transparent" />
     </div>
   )
 }

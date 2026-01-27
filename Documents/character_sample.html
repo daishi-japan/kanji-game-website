@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>元気なみかん - ローディング</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800&display=swap');
+
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            background-color: #FFF7ED; /* 薄いオレンジ背景 */
+            color: #431407;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+        }
+
+        /* 共通：ローディングドット */
+        .loading-dots::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+        @keyframes dots {
+            0%, 20% { content: ''; }
+            40% { content: '.'; }
+            60% { content: '..'; }
+            80%, 100% { content: '...'; }
+        }
+
+        /* --- 案1: バウンドみかん --- */
+        .mikan-body {
+            width: 100px; height: 90px; /* サイズを少し大きく */
+            background: #F97316;
+            border-radius: 50%;
+            position: relative;
+            animation: mikan-bounce 0.6s infinite alternate cubic-bezier(0.5, 0.05, 1, 0.5);
+        }
+        .mikan-leaf {
+            position: absolute; top: -12px; left: 45px;
+            width: 25px; height: 12px;
+            background: #65A30D;
+            border-radius: 20px 0 20px 0;
+            transform: rotate(-10deg);
+        }
+        .mikan-face {
+            position: absolute; top: 30px; left: 25px; width: 50px;
+            display: flex; justify-content: space-between;
+        }
+        .eye { width: 10px; height: 10px; background: #431407; border-radius: 50%; }
+        .mouth {
+            position: absolute; top: 6px; left: 18px; width: 14px; height: 7px;
+            border-bottom: 3px solid #431407; border-radius: 0 0 10px 10px;
+        }
+        .mikan-shadow {
+            width: 80px; height: 12px; background: rgba(0,0,0,0.1);
+            border-radius: 50%; margin-top: 60px;
+            animation: mikan-shadow 0.6s infinite alternate cubic-bezier(0.5, 0.05, 1, 0.5);
+        }
+        @keyframes mikan-bounce {
+            0% { transform: translateY(0) scale(1.1, 0.9); }
+            100% { transform: translateY(-50px) scale(0.95, 1.05); }
+        }
+        @keyframes mikan-shadow {
+            0% { transform: scale(1); opacity: 0.5; }
+            100% { transform: scale(0.6); opacity: 0.2; }
+        }
+    </style>
+</head>
+<body class="p-4">
+
+    <div class="bg-white rounded-3xl p-10 shadow-xl border-4 border-orange-100 flex flex-col items-center max-w-sm w-full">
+        <div class="h-40 flex flex-col items-center justify-center mb-6">
+            <div class="mikan-body">
+                <div class="mikan-leaf"></div>
+                <div class="mikan-face">
+                    <div class="eye"></div>
+                    <div class="mouth"></div>
+                    <div class="eye"></div>
+                </div>
+            </div>
+            <div class="mikan-shadow"></div>
+        </div>
+        <h2 class="text-2xl font-extrabold text-orange-600 mb-2">しゅうけいちゅう</h2>
+        <div class="text-sm text-orange-400 font-bold">ちょっと まってね<span class="loading-dots"></span></div>
+    </div>
+
+</body>
+</html>

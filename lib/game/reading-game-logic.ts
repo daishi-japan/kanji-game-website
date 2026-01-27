@@ -1,55 +1,93 @@
-import { KanjiData, generateChoices } from '../data/kanji-data'
+import { KanjiData, generateChoices, getKanjisByGrade } from '../data/kanji-data'
 
 // ゲーム状態
 export interface GameState {
-  currentKanjiIndex: number
-  score: number // 正解数
+  score: number // スコア（10点ずつ加算）
   lives: number
   timeRemaining: number // 秒
   isPlaying: boolean
   isGameOver: boolean
-  isCleared: boolean
   currentKanji: KanjiData | null
   choices: string[]
-  // ===== Phase 2以降の機能：コメントアウト開始 =====
-  // combo: number // 連続正解数
-  // ===== コメントアウト終了 =====
+  fallSpeed: number // 現在の落下時間（秒）
+  correctCount: number // 正解数（統計用）
 }
 
 // ゲーム設定
 export interface GameConfig {
   maxLives: number
   timeLimit: number // 秒
-  baseScore: number // 基本点数
-  comboBonus: number // コンボボーナス倍率
-  timeBonusRate: number // 時間ボーナス係数
+  scorePerCorrect: number // 正解あたりのスコア
+  baseFallSpeed: number // 基本落下時間（秒）
+  speedIncrement: number // 正解ごとの時間減少量（秒）
+}
+
+// 速度と学年による設定を生成
+export function createGameConfig(
+  speed: 'slow' | 'normal' | 'fast',
+  grade: 1 | 2 | 3 | 4 | 5 | 6
+): GameConfig {
+  // 落下時間（秒）: 大きいほど遅い
+  const speedMap = {
+    slow: 8,    // 8秒かけて落下
+    normal: 5,  // 5秒かけて落下
+    fast: 3,    // 3秒かけて落下
+  }
+
+  // 学年が上がるほど少し速くなる（-0.1秒ずつ）
+  const baseFallSpeed = Math.max(2, speedMap[speed] - (grade * 0.1))
+
+  return {
+    maxLives: 3,
+    timeLimit: 30,
+    scorePerCorrect: 10,
+    baseFallSpeed,
+    speedIncrement: -0.1,  // 正解するたびに0.1秒速くなる（マイナス）
+  }
 }
 
 export const defaultGameConfig: GameConfig = {
   maxLives: 3,
-  timeLimit: 120, // 10問 × 12秒/問 = 120秒
-  baseScore: 1, // 1問正解 = 1点
-  comboBonus: 0, // 使用しない
-  timeBonusRate: 0, // 使用しない
+  timeLimit: 30,
+  scorePerCorrect: 10,
+  baseFallSpeed: 5,      // 5秒かけて落下
+  speedIncrement: -0.1,  // 正解ごとに0.1秒速くなる
 }
 
-// 初期状態を生成
+// 初期状態を生成（ランダムに1問選択）
 export function createInitialState(
-  kanjis: KanjiData[],
+  grade: 1 | 2 | 3 | 4 | 5 | 6,
   config: GameConfig = defaultGameConfig
 ): GameState {
-  const firstKanji = kanjis[0] || null
+  const allKanjis = getKanjisByGrade(grade)
+  const randomKanji = allKanjis[Math.floor(Math.random() * allKanjis.length)]
 
   return {
-    currentKanjiIndex: 0,
     score: 0,
     lives: config.maxLives,
     timeRemaining: config.timeLimit,
     isPlaying: false,
     isGameOver: false,
-    isCleared: false,
-    currentKanji: firstKanji,
-    choices: firstKanji ? generateChoices(firstKanji) : [],
+    currentKanji: randomKanji,
+    choices: randomKanji ? generateChoices(randomKanji) : [],
+    fallSpeed: config.baseFallSpeed,
+    correctCount: 0,
+  }
+}
+
+// 次の問題を読み込む
+export function loadNextQuestion(
+  state: GameState,
+  grade: 1 | 2 | 3 | 4 | 5 | 6,
+  config: GameConfig = defaultGameConfig
+): GameState {
+  const allKanjis = getKanjisByGrade(grade)
+  const randomKanji = allKanjis[Math.floor(Math.random() * allKanjis.length)]
+
+  return {
+    ...state,
+    currentKanji: randomKanji,
+    choices: randomKanji ? generateChoices(randomKanji) : [],
   }
 }
 
@@ -57,7 +95,7 @@ export function createInitialState(
 export function checkAnswer(
   state: GameState,
   selectedAnswer: string,
-  kanjis: KanjiData[],
+  grade: 1 | 2 | 3 | 4 | 5 | 6,
   config: GameConfig = defaultGameConfig
 ): {
   isCorrect: boolean
@@ -71,26 +109,26 @@ export function checkAnswer(
   const isCorrect = selectedAnswer === state.currentKanji.reading
 
   if (isCorrect) {
-    // 正解時（スコアは正解数のみ）
-    const earnedScore = 1
+    // 正解時：スコア加算、速度アップ、次の問題へ
+    const earnedScore = config.scorePerCorrect
+    const newFallSpeed = state.fallSpeed + config.speedIncrement
 
-    const nextIndex = state.currentKanjiIndex + 1
-    const isLastKanji = nextIndex >= kanjis.length
-    const nextKanji = isLastKanji ? null : kanjis[nextIndex]
+    // 次の問題を読み込む
+    const allKanjis = getKanjisByGrade(grade)
+    const randomKanji = allKanjis[Math.floor(Math.random() * allKanjis.length)]
 
     const newState: GameState = {
       ...state,
-      currentKanjiIndex: nextIndex,
       score: state.score + earnedScore,
-      currentKanji: nextKanji,
-      choices: nextKanji ? generateChoices(nextKanji) : [],
-      isCleared: isLastKanji,
-      isPlaying: !isLastKanji,
+      fallSpeed: newFallSpeed,
+      correctCount: state.correctCount + 1,
+      currentKanji: randomKanji,
+      choices: randomKanji ? generateChoices(randomKanji) : [],
     }
 
     return { isCorrect: true, newState, earnedScore }
   } else {
-    // 不正解時
+    // 不正解時：ライフ減少、ゲーム継続（次の問題には進まない）
     const newLives = state.lives - 1
     const isGameOver = newLives <= 0
 
@@ -102,6 +140,37 @@ export function checkAnswer(
     }
 
     return { isCorrect: false, newState, earnedScore: 0 }
+  }
+}
+
+// 見逃し判定（地面に到達）
+export function handleMiss(
+  state: GameState,
+  grade: 1 | 2 | 3 | 4 | 5 | 6
+): GameState {
+  if (!state.isPlaying) return state
+
+  const newLives = state.lives - 1
+  const isGameOver = newLives <= 0
+
+  if (isGameOver) {
+    return {
+      ...state,
+      lives: newLives,
+      isGameOver: true,
+      isPlaying: false,
+    }
+  }
+
+  // ライフが残っている場合、次の問題へ
+  const allKanjis = getKanjisByGrade(grade)
+  const randomKanji = allKanjis[Math.floor(Math.random() * allKanjis.length)]
+
+  return {
+    ...state,
+    lives: newLives,
+    currentKanji: randomKanji,
+    choices: randomKanji ? generateChoices(randomKanji) : [],
   }
 }
 
@@ -130,34 +199,8 @@ export function startGame(state: GameState): GameState {
 
 // ゲームリトライ
 export function retryGame(
-  kanjis: KanjiData[],
+  grade: 1 | 2 | 3 | 4 | 5 | 6,
   config: GameConfig = defaultGameConfig
 ): GameState {
-  return createInitialState(kanjis, config)
-}
-
-// ===== Phase 2以降の機能：コメントアウト開始 =====
-// スコアランク判定
-// export type ScoreRank = 'S' | 'A' | 'B' | 'C' | 'D'
-//
-// export function getScoreRank(
-//   score: number,
-//   maxScore: number
-// ): ScoreRank {
-//   const percentage = (score / maxScore) * 100
-//
-//   if (percentage >= 90) return 'S'
-//   if (percentage >= 80) return 'A'
-//   if (percentage >= 70) return 'B'
-//   if (percentage >= 60) return 'C'
-//   return 'D'
-// }
-// ===== コメントアウト終了 =====
-
-// 最大スコア計算（全問数）
-export function calculateMaxScore(
-  kanjis: KanjiData[],
-  config: GameConfig = defaultGameConfig
-): number {
-  return kanjis.length // 問題数 = 最大スコア
+  return createInitialState(grade, config)
 }

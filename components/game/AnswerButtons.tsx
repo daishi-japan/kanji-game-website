@@ -1,39 +1,42 @@
 'use client'
 
-import { GameButton } from './GameButton'
-
 interface AnswerButtonsProps {
   choices: string[]
-  onAnswer: (answer: string) => void
+  onAnswer: (answer: string, index: number) => void
   disabled?: boolean
-  correctAnswer?: string | null // 正解を表示する場合
+  feedbackType?: 'correct' | 'wrong' | 'miss' | null
+  selectedIndex?: number | null
 }
 
 export function AnswerButtons({
   choices,
   onAnswer,
   disabled = false,
-  correctAnswer = null,
+  feedbackType,
+  selectedIndex,
 }: AnswerButtonsProps) {
-  const getButtonState = (choice: string) => {
-    if (!correctAnswer) return 'idle'
-    if (choice === correctAnswer) return 'correct'
-    return 'idle'
+  const getButtonStyle = (index: number) => {
+    if (selectedIndex === index && feedbackType === 'correct') {
+      return 'bg-green-200 border-green-500 text-green-900'
+    } else if (selectedIndex === index && feedbackType === 'wrong') {
+      return 'bg-red-200 border-red-500 text-red-900'
+    }
+    return 'bg-white border-orange-400 text-orange-900 hover:bg-orange-50'
   }
 
   return (
-    <div className="grid grid-cols-3 gap-4 w-full max-w-4xl">
+    <div className="grid grid-cols-3 gap-4">
       {choices.map((choice, index) => (
-        <GameButton
+        <button
           key={index}
-          size="lg"
-          variant="adventure"
-          onClick={() => onAnswer(choice)}
+          onClick={() => !disabled && onAnswer(choice, index)}
           disabled={disabled}
-          state={getButtonState(choice)}
+          className={`py-4 px-6 rounded-3xl text-2xl font-black transition-all border-4 shadow-md active:scale-95 ${getButtonStyle(index)} ${
+            disabled ? 'cursor-not-allowed opacity-70' : ''
+          }`}
         >
           {choice}
-        </GameButton>
+        </button>
       ))}
     </div>
   )

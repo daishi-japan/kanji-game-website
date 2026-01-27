@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>みかんの漢字キャッチ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        mikan: {
+                            50: '#FFF7ED',
+                            100: '#FFEDD5',
+                            200: '#FED7AA',
+                            300: '#FDBA74',
+                            400: '#FB923C',
+                            500: '#F97316',
+                            600: '#EA580C',
+                            700: '#C2410C',
+                            800: '#9A3412',
+                            900: '#7C2D12',
+                        },
+                        leaf: '#65A30D',
+                        brown: '#431407',
+                    },
+                    fontFamily: {
+                        sans: ['"M PLUS Rounded 1c"', 'sans-serif'],
+                    },
+                    animation: {
+                        'float': 'float 3s ease-in-out infinite',
+                        'bg-slide': 'bg-slide 20s linear infinite',
+                        'bounce-slow': 'bounce 2s infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        'bg-slide': {
+                            '0%': { backgroundPosition: '0 0' },
+                            '100%': { backgroundPosition: '0 1000px' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800&display=swap');
+
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            background-color: #FFF7ED;
+            color: #431407;
+            overflow: hidden; /* スクロール禁止 */
+            user-select: none;
+        }
+
+        /* 背景のパターン */
+        .bg-pattern {
+            background-image: radial-gradient(#FED7AA 2px, transparent 2px);
+            background-size: 30px 30px;
+        }
+
+        /* 背景に落ちる漢字エフェクト */
+        .falling-bg-kanji {
+            position: absolute;
+            color: rgba(251, 146, 60, 0.2);
+            font-weight: bold;
+            user-select: none;
+            pointer-events: none;
+            animation: fall linear infinite;
+        }
+        @keyframes fall {
+            to { transform: translateY(110vh); }
+        }
+
+        /* --- みかんキャラクター --- */
+        .mikan-container {
+            position: relative;
+            width: 140px;
+            height: 120px;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .mikan-body {
+            width: 100px; height: 90px;
+            background: #F97316;
+            border-radius: 50%;
+            position: relative;
+            z-index: 10;
+            animation: mikan-bounce 0.8s infinite alternate cubic-bezier(0.5, 0.05, 1, 0.5);
+        }
+        .mikan-leaf {
+            position: absolute; top: -12px; left: 45px;
+            width: 25px; height: 12px;
+            background: #65A30D;
+            border-radius: 20px 0 20px 0;
+            transform: rotate(-10deg);
+        }
+        .mikan-face {
+            position: absolute; top: 30px; left: 25px; width: 50px;
+            display: flex; justify-content: space-between;
+        }
+        .eye { width: 10px; height: 10px; background: #431407; border-radius: 50%; }
+        .mouth {
+            position: absolute; top: 6px; left: 18px; width: 14px; height: 7px;
+            border-bottom: 3px solid #431407; border-radius: 0 0 10px 10px;
+            transition: all 0.2s;
+        }
+        /* 喜びの表情 */
+        .mikan-body.happy .mouth {
+            height: 14px;
+            background: #431407;
+            border-radius: 0 0 14px 14px;
+        }
+        .mikan-body.happy {
+            animation: mikan-jump 0.4s ease-out;
+        }
+
+        .mikan-shadow {
+            position: absolute; bottom: 0;
+            width: 80px; height: 12px; background: rgba(0,0,0,0.1);
+            border-radius: 50%;
+            animation: mikan-shadow 0.8s infinite alternate cubic-bezier(0.5, 0.05, 1, 0.5);
+        }
+
+        @keyframes mikan-bounce {
+            0% { transform: translateY(0) scale(1.1, 0.9); }
+            100% { transform: translateY(-30px) scale(0.95, 1.05); }
+        }
+        @keyframes mikan-shadow {
+            0% { transform: scale(1); opacity: 0.5; }
+            100% { transform: scale(0.6); opacity: 0.2; }
+        }
+        @keyframes mikan-jump {
+            0% { transform: translateY(0) scale(1.2, 0.8); }
+            50% { transform: translateY(-50px) scale(0.9, 1.1); }
+            100% { transform: translateY(0) scale(1, 1); }
+        }
+
+        /* ゲームエリア */
+        #game-play-area {
+            position: relative;
+            background: rgba(255, 255, 255, 0.6);
+            border: 4px solid #FED7AA;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: inset 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .falling-item {
+            position: absolute;
+            width: 60px; height: 60px;
+            background: white;
+            border: 3px solid #F97316;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem; font-weight: 800; color: #431407;
+            box-shadow: 0 4px 0 #FDBA74;
+            z-index: 20;
+        }
+
+        /* UIパーツ */
+        .btn-push {
+            background: white;
+            border: 2px solid #F97316;
+            color: #C2410C;
+            border-radius: 16px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            box-shadow: 0 4px 0 #FDBA74;
+            transition: all 0.1s;
+        }
+        .btn-push:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #FDBA74;
+        }
+        .btn-push.correct {
+            background: #BBF7D0; border-color: #16A34A; color: #14532D; box-shadow: 0 4px 0 #86EFAC;
+        }
+        .btn-push.wrong {
+            background: #FECACA; border-color: #DC2626; color: #7F1D1D; box-shadow: 0 4px 0 #FCA5A5;
+        }
+
+        /* 吹き出し */
+        .speech-bubble {
+            position: absolute;
+            bottom: 100px; left: 100px;
+            background: white;
+            border: 3px solid #F97316;
+            border-radius: 20px;
+            padding: 10px 15px;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #EA580C;
+            white-space: nowrap;
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+        }
+        .speech-bubble::after {
+            content: ''; position: absolute; bottom: -10px; left: 20px;
+            border-width: 10px 10px 0; border-style: solid;
+            border-color: #F97316 transparent; display: block; width: 0;
+        }
+        .speech-bubble.show { opacity: 1; transform: scale(1); bottom: 110px; }
+
+    </style>
+</head>
+<body class="h-screen w-full relative bg-pattern">
+
+    <!-- 背景アニメーション (おちものイメージ) -->
+    <div id="bg-effects" class="absolute inset-0 overflow-hidden pointer-events-none z-0"></div>
+
+    <!-- メインコンテナ -->
+    <div class="relative z-10 w-full h-full max-w-md mx-auto flex flex-col">
+        
+        <!-- --- 画面1: トップページ (ボタン1つに変更) --- -->
+        <div id="home-screen" class="flex-grow flex flex-col items-center justify-center p-6 space-y-12">
+            
+            <!-- タイトルロゴ -->
+            <div class="text-center">
+                <h1 class="text-4xl font-black text-mikan-600 drop-shadow-sm tracking-tighter transform -rotate-2">
+                    <span class="inline-block text-mikan-500">み</span>
+                    <span class="inline-block text-mikan-600 transform rotate-3">か</span>
+                    <span class="inline-block text-mikan-500">ん</span>
+                    <span class="text-2xl text-brown ml-1">の</span>
+                    <br>
+                    <span class="text-5xl text-mikan-500 mt-2 inline-block">漢字キャッチ</span>
+                </h1>
+                <p class="text-mikan-800 font-bold mt-4 bg-white/70 inline-block px-4 py-1 rounded-full text-sm">おちてくる かんじを よもう！</p>
+            </div>
+
+            <!-- メインキャラクター (少し大きく) -->
+            <div class="mikan-container transform scale-150">
+                <div class="mikan-body">
+                    <div class="mikan-leaf"></div>
+                    <div class="mikan-face"><div class="eye"></div><div class="mouth"></div><div class="eye"></div></div>
+                </div>
+                <div class="mikan-shadow"></div>
+            </div>
+
+            <!-- スタートボタン (これ1つに集約) -->
+            <div class="w-full max-w-xs">
+                <button onclick="startGame()" class="w-full bg-gradient-to-b from-mikan-400 to-mikan-600 text-white text-2xl font-black py-6 rounded-full shadow-xl border-b-8 border-mikan-800 active:border-b-0 active:translate-y-2 transition-all animate-float hover:scale-105">
+                    よむれんしゅうをする
+                </button>
+            </div>
+
+        </div>
+
+        <!-- --- 画面2: ゲームプレイ --- -->
+        <div id="game-screen" class="hidden h-full flex flex-col p-4">
+            
+            <!-- ヘッダー -->
+            <div class="flex justify-between items-center mb-2">
+                <div class="bg-white/80 rounded-full px-4 py-1 border-2 border-mikan-200 font-bold text-mikan-800">
+                    💖 <span id="game-life">3</span>
+                </div>
+                <div class="bg-white/80 rounded-full px-4 py-1 border-2 border-mikan-200 font-bold text-mikan-800">
+                    ⏱️ <span id="game-time">30</span>
+                </div>
+                <div class="bg-mikan-100 rounded-full px-4 py-1 border-2 border-mikan-300 font-black text-mikan-800 text-xl">
+                    <span id="game-score">0</span> 点
+                </div>
+            </div>
+
+            <!-- ゲームエリア -->
+            <div id="game-play-area" class="flex-grow mb-4 relative">
+                <!-- 落下する漢字はJSでここに追加 -->
+            </div>
+
+            <!-- キャラクター応援エリア (絶対配置) -->
+            <div class="absolute bottom-32 left-4 z-20 pointer-events-none">
+                <div class="speech-bubble" id="mikan-speech">がんばれ！</div>
+                <div class="mikan-container transform scale-75 origin-bottom-left" id="game-mikan">
+                    <div class="mikan-body">
+                        <div class="mikan-leaf"></div>
+                        <div class="mikan-face"><div class="eye"></div><div class="mouth"></div><div class="eye"></div></div>
+                    </div>
+                    <!-- 影は省略 -->
+                </div>
+            </div>
+
+            <!-- 操作ボタン -->
+            <div id="game-controls" class="grid grid-cols-3 gap-3 h-20 mb-2 relative z-30">
+                <!-- JSで生成 -->
+            </div>
+            
+            <button onclick="stopGame()" class="mx-auto text-xs text-mikan-400 font-bold underline mt-2">やめる</button>
+        </div>
+
+        <!-- --- 画面3: 結果発表 (モーダル) --- -->
+        <div id="result-screen" class="hidden absolute inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl p-8 w-full max-w-sm text-center border-8 border-mikan-200 shadow-2xl relative overflow-hidden">
+                <!-- 背景キラキラ -->
+                <div class="absolute top-0 left-0 w-full h-full bg-pattern opacity-30"></div>
+                
+                <div class="relative z-10">
+                    <div class="text-6xl mb-4 animate-bounce">🍊</div>
+                    <h2 class="text-3xl font-black text-mikan-600 mb-2">おしまい！</h2>
+                    <div class="text-mikan-800 font-bold mb-6">
+                        スコア: <span id="final-score" class="text-5xl">0</span> 点
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <button onclick="startGame()" class="w-full bg-mikan-500 text-white font-bold py-3 rounded-xl shadow-md hover:bg-mikan-600">
+                            もういちど
+                        </button>
+                        <button onclick="goHome()" class="w-full bg-white border-2 border-mikan-300 text-mikan-600 font-bold py-3 rounded-xl">
+                            トップへもどる
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // 簡易漢字データ (全学年分の一部)
+        const kanjiData = [
+            { char: '山', read: 'やま', grade: 1 }, { char: '川', read: 'かわ', grade: 1 }, { char: '田', read: 'た', grade: 1 },
+            { char: '日', read: 'ひ', grade: 1 }, { char: '月', read: 'つき', grade: 1 }, { char: '火', read: 'ひ', grade: 1 },
+            { char: '水', read: 'みず', grade: 1 }, { char: '木', read: 'き', grade: 1 }, { char: '金', read: 'かね', grade: 1 },
+            { char: '土', read: 'つち', grade: 1 }, { char: '空', read: 'そら', grade: 1 }, { char: '雨', read: 'あめ', grade: 1 },
+            { char: '雪', read: 'ゆき', grade: 2 }, { char: '雲', read: 'くも', grade: 2 }, { char: '風', read: 'かぜ', grade: 2 },
+            { char: '海', read: 'うみ', grade: 2 }, { char: '池', read: 'いけ', grade: 2 }, { char: '谷', read: 'たに', grade: 2 },
+            { char: '岩', read: 'いわ', grade: 2 }, { char: '星', read: 'ほし', grade: 2 }, { char: '晴', read: 'はれ', grade: 2 },
+            { char: '光', read: 'ひかり', grade: 2 }, { char: '朝', read: 'あさ', grade: 2 }, { char: '昼', read: 'ひる', grade: 2 },
+            { char: '愛', read: 'あい', grade: 4 }, { char: '勇', read: 'ゆう', grade: 5 }, { char: '夢', read: 'ゆめ', grade: 5 }
+        ];
+
+        // 背景エフェクト生成
+        function createBgEffects() {
+            const container = document.getElementById('bg-effects');
+            const kanjis = ['山', '川', '空', '夢', '花', '海', '星', '光'];
+            
+            setInterval(() => {
+                const el = document.createElement('div');
+                el.className = 'falling-bg-kanji';
+                el.innerText = kanjis[Math.floor(Math.random() * kanjis.length)];
+                el.style.left = Math.random() * 100 + 'vw';
+                el.style.fontSize = (Math.random() * 2 + 1) + 'rem';
+                el.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                el.style.opacity = Math.random() * 0.3;
+                container.appendChild(el);
+                
+                setTimeout(() => el.remove(), 20000);
+            }, 1000);
+        }
+        createBgEffects();
+
+        // ゲーム状態管理
+        let selectedGrade = 1;
+        let gameTimer, fallLoop;
+        let score = 0;
+        let lives = 3;
+        let timeLeft = 30;
+        let isPlaying = false;
+        let currentTarget = null;
+        let fallingSpeed = 1.5;
+        let fallY = -60;
+
+        function goHome() {
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('home-screen').classList.remove('hidden');
+        }
+
+        function startGame() {
+            // 画面切り替え
+            document.getElementById('home-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+
+            // 初期化
+            score = 0;
+            lives = 3;
+            timeLeft = 30;
+            fallingSpeed = 1.5; // 標準スピード
+            isPlaying = true;
+            updateUI();
+            
+            mikanSay("はじまるよ！");
+
+            // タイマースタート
+            clearInterval(gameTimer);
+            gameTimer = setInterval(() => {
+                if (!isPlaying) return;
+                timeLeft--;
+                updateUI();
+                if (timeLeft <= 0) gameOver();
+            }, 1000);
+
+            nextRound();
+        }
+
+        function stopGame() {
+            isPlaying = false;
+            clearInterval(gameTimer);
+            clearInterval(fallLoop);
+            goHome();
+        }
+
+        function updateUI() {
+            document.getElementById('game-score').innerText = score;
+            document.getElementById('game-time').innerText = timeLeft;
+            document.getElementById('game-life').innerText = lives; // ハートの数などで表現も可
+        }
+
+        function mikanSay(text) {
+            const bubble = document.getElementById('mikan-speech');
+            bubble.innerText = text;
+            bubble.classList.add('show');
+            
+            // みかんを跳ねさせる
+            const mikan = document.querySelector('#game-mikan .mikan-body');
+            mikan.classList.add('happy');
+            setTimeout(() => mikan.classList.remove('happy'), 400);
+
+            setTimeout(() => bubble.classList.remove('show'), 1500);
+        }
+
+        function nextRound() {
+            if (!isPlaying) return;
+
+            // データ選択 (全学年ミックス)
+            let pool = kanjiData;
+            
+            currentTarget = pool[Math.floor(Math.random() * pool.length)];
+
+            // 落下要素作成
+            const area = document.getElementById('game-play-area');
+            area.innerHTML = ''; // クリア
+            
+            const el = document.createElement('div');
+            el.className = 'falling-item';
+            el.innerText = currentTarget.char;
+            // ランダムなX位置 (親要素の幅 - 自身の幅)
+            const maxX = area.clientWidth - 60;
+            el.style.left = Math.floor(Math.random() * maxX) + 'px';
+            area.appendChild(el);
+
+            fallY = -60;
+
+            // 選択肢作成
+            const opts = [currentTarget.read];
+            // ダミー作成
+            while (opts.length < 3) {
+                const d = kanjiData[Math.floor(Math.random() * kanjiData.length)].read;
+                if (!opts.includes(d)) opts.push(d);
+            }
+            opts.sort(() => 0.5 - Math.random()); // シャッフル
+
+            const controls = document.getElementById('game-controls');
+            controls.innerHTML = '';
+            opts.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-push';
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(opt, btn);
+                controls.appendChild(btn);
+            });
+
+            // 落下ループ
+            clearInterval(fallLoop);
+            fallLoop = setInterval(() => {
+                if (!isPlaying) return;
+                fallY += fallingSpeed;
+                el.style.top = fallY + 'px';
+
+                // 地面到達判定
+                if (fallY > 300) { // エリアの高さ(推定)より大きく
+                    handleMiss();
+                }
+            }, 20);
+        }
+
+        function checkAnswer(ans, btnElement) {
+            if (!isPlaying) return;
+
+            if (ans === currentTarget.read) {
+                // 正解
+                score += 10;
+                fallingSpeed += 0.1; // 加速
+                mikanSay("すごい！");
+                
+                // ボタン演出
+                btnElement.classList.add('correct');
+                
+                // 落下物を消して次へ
+                const item = document.querySelector('.falling-item');
+                if (item) {
+                    item.style.background = '#BBF7D0';
+                    item.style.borderColor = '#22C55E';
+                    item.innerText = '⭕️';
+                }
+                
+                clearInterval(fallLoop);
+                setTimeout(nextRound, 500);
+            } else {
+                // 不正解
+                lives--;
+                updateUI();
+                btnElement.classList.add('wrong');
+                mikanSay("あちゃー");
+                if (lives <= 0) gameOver();
+            }
+        }
+
+        function handleMiss() {
+            clearInterval(fallLoop);
+            lives--;
+            updateUI();
+            
+            const item = document.querySelector('.falling-item');
+            if(item) {
+                item.style.background = '#FECACA';
+                item.innerText = '💥';
+            }
+
+            mikanSay("おちちゃった...");
+
+            if (lives <= 0) {
+                gameOver();
+            } else {
+                setTimeout(nextRound, 1000);
+            }
+        }
+
+        function gameOver() {
+            isPlaying = false;
+            clearInterval(gameTimer);
+            clearInterval(fallLoop);
+            
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('result-screen').classList.remove('hidden');
+        }
+
+    </script>
+</body>
+</html>

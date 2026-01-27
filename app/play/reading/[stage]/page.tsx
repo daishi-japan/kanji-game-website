@@ -4,22 +4,20 @@ import { use, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { getStageById, getKanjisByStage } from '@/lib/data/kanji-data'
 import {
   createInitialState,
+  createGameConfig,
   checkAnswer,
   updateTimer,
   startGame,
   retryGame,
-  calculateMaxScore,
+  handleMiss,
   GameState,
 } from '@/lib/game/reading-game-logic'
 import { FallingKanji } from '@/components/game/FallingKanji'
 import { AnswerButtons } from '@/components/game/AnswerButtons'
-import { GameHUD } from '@/components/game/GameHUD'
-import { EmotiveDialog } from '@/components/game/EmotiveDialog'
-import { NarrativeProgress } from '@/components/game/NarrativeProgress'
-import { GameButton } from '@/components/game/GameButton'
+import { MikanCharacter } from '@/components/game/MikanCharacter'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export default function ReadingGamePage({
   params,
@@ -29,54 +27,43 @@ export default function ReadingGamePage({
   const resolvedParams = use(params)
   const router = useRouter()
 
-  const stage = getStageById(resolvedParams.stage)
-  const allKanjis = stage ? getKanjisByStage(stage.id) : []
+  // stage IDから学年と速度を抽出 (例: "grade_1_slow" => grade=1, speed="slow")
+  const parseStageId = (stageId: string): { grade: 1 | 2 | 3 | 4 | 5 | 6; speed: 'slow' | 'normal' | 'fast' } | null => {
+    const match = stageId.match(/grade_(\d+)_(slow|normal|fast)/)
+    if (!match) return null
+    return {
+      grade: parseInt(match[1], 10) as 1 | 2 | 3 | 4 | 5 | 6,
+      speed: match[2] as 'slow' | 'normal' | 'fast',
+    }
+  }
 
-  // ランダムに10問選択したkanjisを保持
-  const [kanjis, setKanjis] = useState<typeof allKanjis>([])
+  const stageInfo = parseStageId(resolvedParams.stage)
+
   const [gameState, setGameState] = useState<GameState | null>(null)
   const [showResult, setShowResult] = useState(false)
-  const [feedbackMessage, setFeedbackMessage] = useState('')
-  const [showScoreCalculation, setShowScoreCalculation] = useState(false)
-  const [animatedScore, setAnimatedScore] = useState(0)
+  const [feedbackType, setFeedbackType] = useState<'correct' | 'wrong' | 'miss' | null>(null)
   const [countdown, setCountdown] = useState<number | null>(null)
+  const [characterMessage, setCharacterMessage] = useState<string>('')
+  const [selectedButtonIndex, setSelectedButtonIndex] = useState<number | null>(null)
+  const [kanjiKey, setKanjiKey] = useState(0)
 
-  // ステージが存在しない場合はリダイレクト
+  // ステージ情報が無効な場合はリダイレクト
   useEffect(() => {
-    if (!stage) {
+    if (!stageInfo) {
       router.push('/play/reading')
     }
-  }, [stage, router])
+  }, [stageInfo, router])
 
-  // 初期化：ランダムに10問選択
+  // 初期化：自動的にカウントダウン開始
   useEffect(() => {
-    if (allKanjis.length > 0 && kanjis.length === 0) {
-      const shuffled = [...allKanjis]
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1))
-        ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-      }
-      const selected = shuffled.slice(0, 10)
-      setKanjis(selected)
-      setGameState(createInitialState(selected))
+    if (stageInfo && !gameState) {
+      const config = createGameConfig(stageInfo.speed, stageInfo.grade)
+      const initialState = createInitialState(stageInfo.grade, config)
+      setGameState(initialState)
+      setCountdown(3)
+      setCharacterMessage('はじまるよ！')
     }
-  }, [allKanjis, kanjis.length])
-
-  // タイマー更新
-  useEffect(() => {
-    if (!gameState || !gameState.isPlaying) return
-
-    const interval = setInterval(() => {
-      setGameState((prev) => (prev ? updateTimer(prev) : prev))
-    }, 1000)
-
-    return () => clearInterval(interval)
-  }, [gameState?.isPlaying])
-
-  // カウントダウン開始
-  const handleStartCountdown = () => {
-    setCountdown(3)
-  }
+  }, [stageInfo, gameState])
 
   // カウントダウンタイマー
   useEffect(() => {
@@ -93,267 +80,302 @@ export default function ReadingGamePage({
       // カウントダウン終了：ゲーム開始
       if (gameState) {
         setGameState(startGame(gameState))
+        setCharacterMessage('')
       }
       setCountdown(null)
     }
   }, [countdown, gameState])
 
-  // 回答処理（タイムアウト含む）
-  const handleAnswer = (answer: string) => {
-    if (!gameState) return
+  // タイマー更新
+  useEffect(() => {
+    if (!gameState || !gameState.isPlaying) return
 
-    const { isCorrect, newState, earnedScore } = checkAnswer(
+    const interval = setInterval(() => {
+      setGameState((prev) => (prev ? updateTimer(prev) : prev))
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [gameState?.isPlaying])
+
+  // ゲームオーバー検知
+  useEffect(() => {
+    if (gameState?.isGameOver) {
+      setShowResult(true)
+    }
+  }, [gameState?.isGameOver])
+
+  // 回答処理
+  const handleAnswer = (answer: string, index: number) => {
+    if (!gameState || !stageInfo) return
+
+    setSelectedButtonIndex(index)
+
+    const { isCorrect, newState } = checkAnswer(
       gameState,
       answer,
-      kanjis
+      stageInfo.grade,
+      createGameConfig(stageInfo.speed, stageInfo.grade)
     )
 
     setGameState(newState)
 
     if (isCorrect) {
-      setFeedbackMessage(`せいかい！`)
+      setFeedbackType('correct')
+      setCharacterMessage('すごい！')
+
+      // 0.5秒後に次の問題へ
+      setTimeout(() => {
+        setFeedbackType(null)
+        setSelectedButtonIndex(null)
+        setCharacterMessage('')
+        setKanjiKey(prev => prev + 1)
+      }, 500)
     } else {
-      setFeedbackMessage('ざんねん…')
+      setFeedbackType('wrong')
+      setCharacterMessage('あちゃー')
+
+      // 即座に次の問題へ
+      setTimeout(() => {
+        setFeedbackType(null)
+        setSelectedButtonIndex(null)
+        setCharacterMessage('')
+        setKanjiKey(prev => prev + 1)
+      }, 300)
     }
-
-    // 最終問題の場合
-    const isLastQuestion = newState.isCleared || newState.isGameOver
-    const feedbackDuration = isCorrect ? 1000 : 500 // 正解は1秒、誤答は0.5秒
-
-    setTimeout(() => {
-      setFeedbackMessage('')
-
-      if (isLastQuestion) {
-        // スコア集計アニメーション開始
-        setShowScoreCalculation(true)
-        setAnimatedScore(0)
-
-        // スコアをカウントアップ
-        const finalScore = newState.score
-        const duration = 2000 // 2秒かけてカウントアップ
-        const steps = finalScore
-        const stepDuration = duration / Math.max(steps, 1)
-
-        let currentStep = 0
-        const countUpInterval = setInterval(() => {
-          currentStep++
-          setAnimatedScore(currentStep)
-
-          if (currentStep >= finalScore) {
-            clearInterval(countUpInterval)
-            // カウントアップ完了後、少し待ってからリザルト表示
-            setTimeout(() => {
-              setShowScoreCalculation(false)
-              setShowResult(true)
-            }, 500)
-          }
-        }, stepDuration)
-      }
-    }, feedbackDuration)
   }
 
-  // 落下タイムアウト処理
+  // 落下完了処理（見逃し）
   const handleFallComplete = () => {
-    handleAnswer('__TIMEOUT__')
+    if (!gameState || !stageInfo) return
+
+    const newState = handleMiss(gameState, stageInfo.grade)
+    setGameState(newState)
+
+    setFeedbackType('miss')
+    setCharacterMessage('おちちゃった...')
+
+    // 即座に次の問題へ
+    setTimeout(() => {
+      setFeedbackType(null)
+      setCharacterMessage('')
+      setKanjiKey(prev => prev + 1)
+    }, 300)
   }
 
   // リトライ
-  const handleRetry = () => {
-    // 新しくランダムに10問選択
-    const shuffled = [...allKanjis]
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1))
-      ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  // スコアに応じたタイトルとメッセージを取得
+  const getResultMessage = (score: number) => {
+    if (score >= 130) {
+      return {
+        title: 'でんせつ！',
+        message: 'しんきろく！きみはすごすぎる！'
+      }
+    } else if (score >= 80) {
+      return {
+        title: 'さいこう！',
+        message: 'かんぺき！きみはてんさいだ！'
+      }
+    } else if (score >= 40) {
+      return {
+        title: 'すごいね！',
+        message: 'どんどんうまくなってるよ！'
+      }
+    } else {
+      return {
+        title: 'がんばったね！',
+        message: 'まだまだこれから！なんどでもちょうせんしよう！'
+      }
     }
-    const selected = shuffled.slice(0, 10)
-    setKanjis(selected)
-    setGameState(retryGame(selected))
-    setShowResult(false)
-    setShowScoreCalculation(false)
-    setAnimatedScore(0)
   }
 
-  if (!stage || !gameState) {
+  const handleRetry = () => {
+    if (!stageInfo) return
+
+    const config = createGameConfig(stageInfo.speed, stageInfo.grade)
+    setGameState(retryGame(stageInfo.grade, config))
+    setShowResult(false)
+    setFeedbackType(null)
+    setSelectedButtonIndex(null)
+    setKanjiKey(0)
+    setCountdown(3)
+    setCharacterMessage('はじまるよ！')
+  }
+
+  if (!stageInfo || !gameState) {
     return null
   }
 
-  const maxScore = calculateMaxScore(kanjis)
-
   return (
-    <main className="h-screen bg-gradient-to-b from-sky-100 to-background p-4 flex flex-col overflow-hidden">
-      <div className="max-w-7xl mx-auto flex-1 flex flex-col space-y-4 w-full">
-        {/* ヘッダー */}
-        <div className="flex items-center gap-4">
-          <Link
-            href="/play/reading"
-            className="p-2 bg-white rounded-full shadow-md hover:opacity-90 transition-all"
-          >
-            <ArrowLeft className="w-6 h-6" />
-          </Link>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold">{stage.name}</h1>
-            <p className="text-sm text-muted-foreground">{stage.description}</p>
-          </div>
-        </div>
+    <main className="h-screen bg-pattern flex flex-col overflow-hidden relative">
+      {/* ヘッダー */}
+      <div className="flex items-center gap-4 p-4 bg-white/80 backdrop-blur-sm">
+        <Link
+          href="/play/reading"
+          className="p-2 bg-white rounded-full shadow-md hover:opacity-90 transition-all"
+        >
+          <ArrowLeft className="w-6 h-6" />
+        </Link>
+      </div>
 
-        {/* ゲーム未開始 */}
-        {!gameState.isPlaying && !gameState.isGameOver && !gameState.isCleared && (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center space-y-6">
-              {countdown === null ? (
-                <>
-                  <div className="space-y-4">
-                    <h2 className="text-4xl font-bold">じゅんびは いいかな？</h2>
-                    <p className="text-xl text-muted-foreground">
-                      {kanjis.length}この かんじを よんでね！
-                    </p>
-                  </div>
-                  <GameButton size="lg" onClick={handleStartCountdown}>
-                    はじめる
-                  </GameButton>
-                </>
-              ) : countdown > 0 ? (
-                <div className="space-y-8">
-                  <h2 className="text-3xl font-bold text-muted-foreground">
-                    スタートまで...
-                  </h2>
-                  <div className="text-9xl font-bold text-primary animate-pulse">
-                    {countdown}
-                  </div>
+      {/* カウントダウン表示 */}
+      {!gameState.isPlaying && !gameState.isGameOver && countdown !== null && (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center space-y-6">
+            {countdown > 0 ? (
+              <div className="space-y-8">
+                <h2 className="text-3xl font-bold text-muted-foreground">
+                  スタートまで...
+                </h2>
+                <div className="text-9xl font-bold text-primary animate-pulse">
+                  {countdown}
                 </div>
-              ) : (
-                <div className="text-6xl font-bold text-primary animate-bounce">
-                  スタート！
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ゲームプレイ中 */}
-        {gameState.isPlaying && gameState.currentKanji && (
-          <div className="flex-1 flex flex-col gap-4 min-h-0">
-            {/* HUD */}
-            <GameHUD
-              score={gameState.score}
-              lives={gameState.lives}
-              maxLives={3}
-              timeRemaining={gameState.timeRemaining}
-            />
-
-            {/* 進捗 */}
-            <NarrativeProgress
-              current={gameState.currentKanjiIndex}
-              total={kanjis.length}
-              characterIcon="🦊"
-              goalIcon="treasure"
-            />
-
-            {/* 落ちてくる漢字 */}
-            <FallingKanji
-              character={gameState.currentKanji.character}
-              isActive={true}
-              onFallComplete={handleFallComplete}
-              fallDuration={5}
-            />
-
-            {/* 回答ボタン */}
-            <div className="flex justify-center pb-2">
-              <AnswerButtons
-                choices={gameState.choices}
-                onAnswer={handleAnswer}
-                disabled={!!feedbackMessage}
-              />
-            </div>
-
-            {/* フィードバック表示 */}
-            {feedbackMessage && (
-              <div className="fixed top-20 right-8 z-50 pointer-events-none">
-                <div className="text-2xl font-bold text-primary bg-white/90 px-6 py-3 rounded-xl shadow-2xl">
-                  {feedbackMessage}
-                </div>
+              </div>
+            ) : (
+              <div className="text-6xl font-bold text-primary animate-bounce">
+                スタート！
               </div>
             )}
           </div>
-        )}
+        </div>
+      )}
 
-        {/* スコア集計アニメーション */}
-        {showScoreCalculation && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-            <div className="bg-white/95 rounded-2xl p-12 text-center space-y-6 shadow-2xl">
-              <p className="text-2xl font-bold text-muted-foreground">
-                けっかを けいさんちゅう...
-              </p>
-              <div className="text-8xl font-bold text-primary">
-                {animatedScore} / {maxScore}
+      {/* ゲームプレイ中 */}
+      {gameState.isPlaying && gameState.currentKanji && (
+        <div className="flex-1 flex flex-col relative overflow-hidden items-center">
+          {/* コンテンツ全体を80%幅に */}
+          <div className="w-full max-w-[80%] flex-1 flex flex-col">
+            {/* HUD */}
+            <div className="flex justify-center items-center py-3">
+              <div className="flex justify-center items-center gap-5 w-full">
+                {/* ライフ */}
+                <div className="flex items-center gap-2 bg-white/90 rounded-full px-8 py-3 border-4 border-orange-200">
+                  <span className="text-2xl">💖</span>
+                  <span className="text-xl font-black text-orange-900">{gameState.lives}</span>
+                </div>
+
+                {/* タイマー */}
+                <div className="flex items-center gap-2 bg-white/90 rounded-full px-8 py-3 border-4 border-orange-200">
+                  <span className="text-2xl">⏱️</span>
+                  <span className="text-xl font-black text-orange-900">{gameState.timeRemaining}</span>
+                </div>
+
+                {/* スコア */}
+                <div className="flex items-center gap-2 bg-white/90 rounded-full px-8 py-3 border-4 border-orange-200">
+                  <span className="text-xl font-black text-orange-900">{gameState.score}点</span>
+                </div>
               </div>
-              <div className="w-64 h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary transition-all duration-200"
-                  style={{
-                    width: `${(animatedScore / maxScore) * 100}%`,
-                  }}
+            </div>
+
+            {/* 落下エリア */}
+            <div className="flex-1 relative bg-white/50 border-4 border-orange-200 rounded-3xl mb-4 overflow-hidden">
+              <AnimatePresence mode="wait">
+                <FallingKanji
+                  key={kanjiKey}
+                  character={gameState.currentKanji.character}
+                  isActive={true}
+                  onFallComplete={handleFallComplete}
+                  fallDuration={gameState.fallSpeed}
+                  feedbackType={feedbackType}
                 />
+              </AnimatePresence>
+
+              {/* みかんキャラクター（左下） */}
+              <div className="absolute bottom-4 left-4 z-20">
+                <div className="relative">
+                  <MikanCharacter size={80} />
+                  {characterMessage && (
+                    <motion.div
+                      className="absolute -top-20 left-12 bg-white border-4 border-orange-400 rounded-2xl px-5 py-2.5 shadow-lg"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                    >
+                      <p className="text-xl font-black text-orange-600 whitespace-nowrap">
+                        {characterMessage}
+                      </p>
+                    </motion.div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        )}
 
-        {/* リザルト */}
-        <EmotiveDialog
-          open={showResult}
-          variant={gameState.isCleared ? 'joy' : 'encourage'}
-          title={gameState.isCleared ? 'がんばりました' : 'ゲームオーバー'}
-          characterIcon={gameState.isCleared ? '🎉' : '💪'}
+            {/* 回答ボタン */}
+            <div className="pb-4">
+              <AnswerButtons
+                choices={gameState.choices}
+                onAnswer={handleAnswer}
+                disabled={feedbackType !== null}
+                feedbackType={feedbackType}
+                selectedIndex={selectedButtonIndex}
+              />
+            </div>
+
+            {/* やめるボタン */}
+            <div className="text-center pb-4">
+              <Link
+                href="/play/reading"
+                className="inline-block text-orange-800 text-lg font-bold hover:text-orange-600 transition-colors border-b-2 border-orange-800 hover:border-orange-600"
+              >
+                やめる
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* リザルト */}
+      {showResult && gameState && (
+        <motion.div
+          className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.3)' }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
         >
-          <div className="space-y-4">
-            <div className="flex items-center justify-center gap-4">
-              <span className="text-6xl">{gameState.isCleared ? '🎉' : '💪'}</span>
-              <p className="text-4xl font-bold text-primary">
-                せいかい: {gameState.score} / {maxScore}
+          <div className="relative bg-white/95 rounded-[2.5rem] p-8 text-center space-y-6 shadow-2xl border-4 border-orange-200 max-w-md w-full mx-4">
+            {/* みかんキャラクター */}
+            <div className="flex justify-center">
+              <MikanCharacter size={120} />
+            </div>
+
+            {/* タイトル */}
+            <h2 className="text-4xl font-black text-orange-600">
+              {getResultMessage(gameState.score).title}
+            </h2>
+
+            {/* スコア表示 */}
+            <div className="space-y-2">
+              <p className="text-xl font-bold text-orange-800">スコア:</p>
+              <p className="text-7xl font-black text-orange-900">
+                {gameState.score}
+                <span className="text-4xl">点</span>
               </p>
             </div>
 
-            {/* ===== Phase 2以降の機能：コメントアウト開始 =====
-            <div className="grid grid-cols-2 gap-4 text-left">
-              <div>
-                <p className="text-sm text-muted-foreground">せいかいすう</p>
-                <p className="text-2xl font-bold">
-                  {gameState.currentKanjiIndex} / {kanjis.length}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">さいこうコンボ</p>
-                <p className="text-2xl font-bold">×{gameState.combo}</p>
-              </div>
-            </div>
-            ===== コメントアウト終了 ===== */}
-
-            <div className="flex flex-col gap-4">
-              {/* ===== Phase 2以降の機能：コメントアウト開始 =====
-              <Link
-                href={`/result?mode=reading&stage=${stage.id}&score=${gameState.score}&maxScore=${maxScore}&rank=C&cleared=${gameState.isCleared}`}
-                className="w-full"
+            {/* ボタン */}
+            <div className="space-y-3 pt-4">
+              <button
+                onClick={handleRetry}
+                className="w-full py-5 px-8 rounded-full text-2xl font-black text-white bg-gradient-to-b from-orange-400 to-orange-600 border-4 border-orange-700 shadow-lg hover:scale-105 active:scale-95 transition-all"
               >
-                <GameButton size="lg" className="w-full">
-                  ほうびを もらう！
-                </GameButton>
+                もういちど
+              </button>
+              <Link href="/play/reading">
+                <button className="w-full py-5 px-8 rounded-full text-2xl font-black text-orange-700 bg-white border-4 border-orange-400 shadow-md hover:bg-orange-50 active:scale-95 transition-all">
+                  トップへもどる
+                </button>
               </Link>
-              ===== コメントアウト終了 ===== */}
-              <div className="grid grid-cols-2 gap-4">
-                <GameButton onClick={handleRetry} size="lg" variant="secondary">
-                  ちょうせんする
-                </GameButton>
-                <Link href="/play/reading">
-                  <GameButton size="lg" variant="secondary" className="w-full">
-                    ステージせんたく
-                  </GameButton>
-                </Link>
-              </div>
             </div>
           </div>
-        </EmotiveDialog>
-      </div>
+        </motion.div>
+      )}
+
+      <style jsx>{`
+        .bg-pattern {
+          background-color: #fff7ed;
+          background-image: radial-gradient(#fed7aa 2px, transparent 2px);
+          background-size: 30px 30px;
+        }
+      `}</style>
     </main>
   )
 }

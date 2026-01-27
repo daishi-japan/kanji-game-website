@@ -22,6 +22,8 @@
   --radius-lg: 1rem;
   --radius-md: 0.75rem;
   --radius-sm: 0.5rem;
+
+  --font-family-sans: var(--font-mplus-rounded), system-ui, sans-serif;
 }
 
 body {
