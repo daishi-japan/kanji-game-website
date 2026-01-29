@@ -41,6 +41,7 @@ export default function ReadingGamePage({
 
   const [gameState, setGameState] = useState<GameState | null>(null)
   const [showResult, setShowResult] = useState(false)
+  const [showScoreCalculation, setShowScoreCalculation] = useState(false)
   const [feedbackType, setFeedbackType] = useState<'correct' | 'wrong' | 'miss' | null>(null)
   const [countdown, setCountdown] = useState<number | null>(null)
   const [characterMessage, setCharacterMessage] = useState<string>('')
@@ -97,10 +98,15 @@ export default function ReadingGamePage({
     return () => clearInterval(interval)
   }, [gameState?.isPlaying])
 
-  // ゲームオーバー検知
+  // ゲームオーバー検知：集計画面を表示後、3秒後にリザルト表示
   useEffect(() => {
     if (gameState?.isGameOver) {
-      setShowResult(true)
+      setShowScoreCalculation(true)
+      const timer = setTimeout(() => {
+        setShowScoreCalculation(false)
+        setShowResult(true)
+      }, 3000)
+      return () => clearTimeout(timer)
     }
   }, [gameState?.isGameOver])
 
@@ -194,6 +200,7 @@ export default function ReadingGamePage({
     const config = createGameConfig(stageInfo.speed, stageInfo.grade)
     setGameState(retryGame(stageInfo.grade, config))
     setShowResult(false)
+    setShowScoreCalculation(false)
     setFeedbackType(null)
     setSelectedButtonIndex(null)
     setKanjiKey(0)
@@ -323,6 +330,47 @@ export default function ReadingGamePage({
         </div>
       )}
 
+      {/* 集計画面 */}
+      <AnimatePresence>
+        {showScoreCalculation && (
+          <motion.div
+            className="fixed inset-0 flex items-center justify-center backdrop-blur-sm z-50"
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.3)' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="text-center space-y-8"
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', damping: 12 }}
+            >
+              {/* みかんキャラクター */}
+              <div className="flex justify-center">
+                <MikanCharacter size={200} />
+              </div>
+
+              {/* メッセージ */}
+              <p className="text-4xl font-black text-white drop-shadow-lg animate-pulse">
+                しゅうけいちゅう...
+              </p>
+
+              {/* ローディングドット */}
+              <div className="flex justify-center gap-4">
+                {[0, 1, 2].map((i) => (
+                  <span
+                    key={i}
+                    className="inline-block w-5 h-5 bg-orange-400 rounded-full loading-dot"
+                    style={{ animationDelay: `${i * 0.2}s` }}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* リザルト */}
       {showResult && gameState && (
         <motion.div
@@ -374,6 +422,19 @@ export default function ReadingGamePage({
           background-color: #fff7ed;
           background-image: radial-gradient(#fed7aa 2px, transparent 2px);
           background-size: 30px 30px;
+        }
+        @keyframes loading-dot-bounce {
+          0%, 80%, 100% {
+            transform: scale(0.6);
+            opacity: 0.4;
+          }
+          40% {
+            transform: scale(1.2);
+            opacity: 1;
+          }
+        }
+        .loading-dot {
+          animation: loading-dot-bounce 1.2s infinite ease-in-out;
         }
       `}</style>
     </main>

@@ -29,7 +29,7 @@ export default function ReadingStageSelectPage() {
   const canStart = selectedGrade !== null && selectedSpeed !== null
 
   return (
-    <main className="relative min-h-screen w-full overflow-hidden bg-pattern flex flex-col items-center justify-between p-6 py-8">
+    <main className="relative min-h-screen w-full overflow-hidden bg-pattern flex flex-col items-center justify-start p-6 py-8">
       {/* 上部コンテンツ */}
       <div className="w-full max-w-2xl space-y-6">
         {/* タイトル */}
