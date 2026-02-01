@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState, useEffect } from 'react'
+import { use, useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
@@ -48,6 +48,7 @@ export default function ReadingGamePage({
   const [characterMessage, setCharacterMessage] = useState<string>('')
   const [selectedButtonIndex, setSelectedButtonIndex] = useState<number | null>(null)
   const [kanjiKey, setKanjiKey] = useState(0)
+  const hasSubmittedResult = useRef(false)
 
   // ステージ情報が無効な場合はリダイレクト
   useEffect(() => {
@@ -104,23 +105,26 @@ export default function ReadingGamePage({
     if (gameState?.isGameOver) {
       setShowScoreCalculation(true)
 
-      // ゲーム結果をDBに保存（バックグラウンド）
-      const score = gameState.score
-      const getRank = (s: number): 'S' | 'A' | 'B' | 'C' | 'D' => {
-        if (s >= 130) return 'S'
-        if (s >= 80) return 'A'
-        if (s >= 40) return 'B'
-        if (s >= 20) return 'C'
-        return 'D'
+      // ゲーム結果をDBに保存（二重送信防止）
+      if (!hasSubmittedResult.current) {
+        hasSubmittedResult.current = true
+        const score = gameState.score
+        const getRank = (s: number): 'S' | 'A' | 'B' | 'C' | 'D' => {
+          if (s >= 130) return 'S'
+          if (s >= 80) return 'A'
+          if (s >= 40) return 'B'
+          if (s >= 20) return 'C'
+          return 'D'
+        }
+        submitGameResult({
+          mode: 'reading',
+          stageId: resolvedParams.stage,
+          score,
+          maxScore: 300,
+          rank: getRank(score),
+          cleared: score >= 40,
+        }).catch((err) => console.error('Failed to save game result:', err))
       }
-      submitGameResult({
-        mode: 'reading',
-        stageId: resolvedParams.stage,
-        score,
-        maxScore: 300,
-        rank: getRank(score),
-        cleared: score >= 40,
-      }).catch((err) => console.error('Failed to save game result:', err))
 
       const timer = setTimeout(() => {
         setShowScoreCalculation(false)
@@ -128,7 +132,7 @@ export default function ReadingGamePage({
       }, 3000)
       return () => clearTimeout(timer)
     }
-  }, [gameState?.isGameOver])
+  }, [gameState?.isGameOver, resolvedParams.stage])
 
   // 回答処理
   const handleAnswer = (answer: string, index: number) => {
@@ -221,6 +225,7 @@ export default function ReadingGamePage({
     setGameState(retryGame(stageInfo.grade, config))
     setShowResult(false)
     setShowScoreCalculation(false)
+    hasSubmittedResult.current = false
     setFeedbackType(null)
     setSelectedButtonIndex(null)
     setKanjiKey(0)
