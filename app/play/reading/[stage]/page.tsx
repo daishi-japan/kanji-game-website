@@ -14,6 +14,7 @@ import {
   handleMiss,
   GameState,
 } from '@/lib/game/reading-game-logic'
+import { submitGameResult } from '@/app/actions/game'
 import { FallingKanji } from '@/components/game/FallingKanji'
 import { AnswerButtons } from '@/components/game/AnswerButtons'
 import { MikanCharacter } from '@/components/game/MikanCharacter'
@@ -102,6 +103,25 @@ export default function ReadingGamePage({
   useEffect(() => {
     if (gameState?.isGameOver) {
       setShowScoreCalculation(true)
+
+      // ゲーム結果をDBに保存（バックグラウンド）
+      const score = gameState.score
+      const getRank = (s: number): 'S' | 'A' | 'B' | 'C' | 'D' => {
+        if (s >= 130) return 'S'
+        if (s >= 80) return 'A'
+        if (s >= 40) return 'B'
+        if (s >= 20) return 'C'
+        return 'D'
+      }
+      submitGameResult({
+        mode: 'reading',
+        stageId: resolvedParams.stage,
+        score,
+        maxScore: 300,
+        rank: getRank(score),
+        cleared: score >= 40,
+      }).catch((err) => console.error('Failed to save game result:', err))
+
       const timer = setTimeout(() => {
         setShowScoreCalculation(false)
         setShowResult(true)
