@@ -15,9 +15,11 @@ import {
   GameState,
 } from '@/lib/game/reading-game-logic'
 import { submitGameResult } from '@/app/actions/game'
+import type { RewardItem } from '@/lib/data/reward-data'
 import { FallingKanji } from '@/components/game/FallingKanji'
 import { AnswerButtons } from '@/components/game/AnswerButtons'
 import { MikanCharacter } from '@/components/game/MikanCharacter'
+import { RewardDisplay } from '@/components/result/RewardDisplay'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function ReadingGamePage({
@@ -48,6 +50,7 @@ export default function ReadingGamePage({
   const [characterMessage, setCharacterMessage] = useState<string>('')
   const [selectedButtonIndex, setSelectedButtonIndex] = useState<number | null>(null)
   const [kanjiKey, setKanjiKey] = useState(0)
+  const [rewards, setRewards] = useState<RewardItem[]>([])
   const hasSubmittedResult = useRef(false)
 
   // ステージ情報が無効な場合はリダイレクト
@@ -123,6 +126,10 @@ export default function ReadingGamePage({
           maxScore: 300,
           rank: getRank(score),
           cleared: score >= 40,
+        }).then((res) => {
+          if (res.success && res.data) {
+            setRewards(res.data.rewards)
+          }
         }).catch((err) => console.error('Failed to save game result:', err))
       }
 
@@ -226,6 +233,7 @@ export default function ReadingGamePage({
     setShowResult(false)
     setShowScoreCalculation(false)
     hasSubmittedResult.current = false
+    setRewards([])
     setFeedbackType(null)
     setSelectedButtonIndex(null)
     setKanjiKey(0)
@@ -404,7 +412,7 @@ export default function ReadingGamePage({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         >
-          <div className="relative bg-white/95 rounded-[2.5rem] p-8 text-center space-y-6 shadow-2xl border-4 border-orange-200 max-w-md w-full mx-4">
+          <div className="relative bg-white/95 rounded-[2.5rem] p-8 text-center space-y-6 shadow-2xl border-4 border-orange-200 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
             {/* みかんキャラクター */}
             <div className="flex justify-center">
               <MikanCharacter size={120} />
@@ -423,6 +431,11 @@ export default function ReadingGamePage({
                 <span className="text-4xl">点</span>
               </p>
             </div>
+
+            {/* 報酬表示 */}
+            {rewards.length > 0 && (
+              <RewardDisplay rewards={rewards} isVisible={showResult} />
+            )}
 
             {/* ボタン */}
             <div className="space-y-3 pt-4">

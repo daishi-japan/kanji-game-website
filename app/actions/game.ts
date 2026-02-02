@@ -17,33 +17,31 @@ export async function submitGameResult(
   result: GameResult
 ): Promise<ActionResult<{ rewards: RewardItem[] }>> {
   try {
-    const supabase = await createClient()
-
-    // ユーザー認証チェック
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return { success: false, error: '認証が必要です' }
-    }
-
-    // 報酬計算（コインのみ）
+    // 報酬計算（認証・DB保存の成否に関係なく必ず返す）
     const rewards = calculateRewards(result)
 
-    // 簡略版RPC関数を呼び出してゲーム結果を保存
-    // Note: kanji_idはダミー値（将来的に実装予定）
-    const { data, error } = await supabase.rpc('rpc_finish_game', {
-      p_user_id: user.id,
-      p_mode: result.mode,
-      p_kanji_id: '00000000-0000-0000-0000-000000000000', // ダミーUUID
-      p_score: result.score,
-      p_is_correct: result.cleared,
-    })
+    // DB保存を試みる（失敗しても報酬は返す）
+    try {
+      const supabase = await createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
 
-    if (error) {
-      console.error('RPC Error:', error)
-      return { success: false, error: 'ゲーム結果の保存に失敗しました' }
+      if (user) {
+        const { error } = await supabase.rpc('rpc_finish_game', {
+          p_user_id: user.id,
+          p_mode: result.mode,
+          p_kanji_id: '00000000-0000-0000-0000-000000000000',
+          p_score: result.score,
+          p_is_correct: result.cleared,
+        })
+
+        if (error) {
+          console.error('RPC Error:', error)
+        }
+      }
+    } catch (dbError) {
+      console.error('DB save failed:', dbError)
     }
 
     return {

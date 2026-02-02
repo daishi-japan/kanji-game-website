@@ -1,123 +1,112 @@
-# 次回セッション実装タスク
+# 次回セッション引き継ぎ情報
 
-## 実装内容：ゲーム終了後の集計画面アニメーション
+## 現在のブランチ
+`0201_02_branch` — **mainへのマージは必ずユーザーに確認を取ること**
 
-### 現状
-- ゲーム終了後、すぐにリザルト画面（「おしまい！」または得点に応じた動的メッセージ）が表示される
-- 集計プロセスが視覚化されていないため、子供にとって唐突な終了体験になっている
+## 未コミットの変更（3ファイル）
 
-### 実装する機能
-ゲーム終了（ライフ0または時間切れ）後、**3秒間の楽しい集計アニメーション**を追加する。
+### 1. `lib/data/reward-data.ts`
+- `calculateRewards()`をフル版に置き換え済み（コインのみ → コイン+経験値+キャラドロップ+エサドロップ）
+- ランクに応じたボーナス倍率・ドロップ確率が有効
+- コメントアウトされていた`calculateRewards_FULL`の内容を`calculateRewards`に統合
 
-#### 集計画面の仕様
-1. **表示タイミング**: ゲーム終了直後（`isGameOver === true`）
-2. **表示時間**: 3秒間
-3. **アニメーション内容**:
-   - みかんキャラクターが画面中央に登場
-   - 「けいさんちゅう...」または「しゅうけいちゅう...」などの楽しいメッセージ
-   - 数字がカウントアップするようなアニメーション効果（オプション）
-   - ローディング風のエフェクト（点滅、バウンスなど）
+### 2. `app/actions/game.ts`（submitGameResult）
+- 報酬計算をDB保存の成否から独立させた
+- 認証なし/RPCエラーでも`{ success: true, data: { rewards } }`を必ず返すように修正
+- DB保存はtry-catchで囲み、失敗してもcatchして報酬は返す
 
-4. **画面遷移フロー**:
-   ```
-   ゲームプレイ中
-   ↓
-   ゲーム終了（ライフ0 or 時間切れ）
-   ↓
-   【新規】集計画面（3秒間）← ここを実装
-   ↓
-   リザルト画面（既存）
-   ```
-
-### 実装ファイル
-- **主な修正ファイル**: `app/play/reading/[stage]/page.tsx`
-
-### 実装の技術的ポイント
-
-1. **状態管理の追加**:
-   ```typescript
-   const [showScoreCalculation, setShowScoreCalculation] = useState(false)
-   ```
-
-2. **ゲーム終了検知の修正**:
-   ```typescript
-   // 現在（100-105行目付近）
-   useEffect(() => {
-     if (gameState?.isGameOver) {
-       setShowResult(true)  // ← これを変更
-     }
-   }, [gameState?.isGameOver])
-
-   // 修正後
-   useEffect(() => {
-     if (gameState?.isGameOver) {
-       setShowScoreCalculation(true)  // まず集計画面を表示
-       setTimeout(() => {
-         setShowScoreCalculation(false)
-         setShowResult(true)  // 3秒後にリザルト表示
-       }, 3000)
-     }
-   }, [gameState?.isGameOver])
-   ```
-
-3. **集計画面のUIコンポーネント追加**:
-   - Framer Motionの`motion.div`と`AnimatePresence`を使用
-   - みかんキャラクターを中央配置（サイズ大きめ、例: 200px）
-   - バウンスアニメーション、フェードイン効果
-   - 「けいさんちゅう...」テキストに点滅やタイピング風アニメーション
-
-4. **条件分岐レンダリング**:
-   ```typescript
-   {showScoreCalculation && (
-     <motion.div>
-       {/* 集計画面のUI */}
-     </motion.div>
-   )}
-
-   {showResult && !showScoreCalculation && (
-     <motion.div>
-       {/* 既存のリザルト画面 */}
-     </motion.div>
-   )}
-   ```
-
-### UI/UXの要件
-- **子供が楽しめる表現**: ワクワク感を演出する動き
-- **わかりやすさ**: 「今、計算しているんだ」と直感的に理解できる
-- **適切なテンポ**: 3秒という短い時間で退屈させない
-
-### デザイン案（参考）
-```
-┌─────────────────────────────┐
-│                             │
-│       🍊（バウンス）        │
-│      サイズ: 200px          │
-│                             │
-│   けいさんちゅう...         │
-│      （点滅・揺れ）         │
-│                             │
-│   ● ● ●（ローディング）    │
-│                             │
-└─────────────────────────────┘
-```
-
-### 参考情報
-- 既存の`MikanCharacter`コンポーネント: `components/game/MikanCharacter.tsx`
-- アニメーション参考: カウントダウン実装（同ファイル68-87行目）
-- Framer Motion使用例: リザルトモーダル（同ファイル320行目以降）
-
-### 確認事項
-- 集計画面の表示中は、背景のゲーム画面が見えていても問題ない
-- 集計画面は全画面オーバーレイで表示（z-indexを適切に設定）
-- アニメーションは過度に派手すぎず、子供向けに親しみやすいトーン
-
-### テスト方法
-1. ゲームを開始
-2. 意図的にライフを0にする、または30秒待つ
-3. 集計画面が3秒間表示されることを確認
-4. その後、リザルト画面（得点に応じた動的タイトル）が表示されることを確認
+### 3. `app/play/reading/[stage]/page.tsx`
+- `RewardDisplay`コンポーネントをimport追加
+- `rewards`ステート追加（`useState<RewardItem[]>([])`）
+- `submitGameResult`の戻り値からrewardsを取得してステートにセット
+- リザルトモーダル内にRewardDisplay表示を追加（スコアの下、ボタンの上）
+- リトライ時に`setRewards([])`でリセット
+- モーダルに`max-h-[90vh] overflow-y-auto`追加
 
 ---
 
-## 実装後の次ステップ（参考）
-- ヘッダーの実装（Pattern 1: 🍊 みかんキャッチ | [ホーム] [ずかん] [せってい]）は承認済みだが未実装
+## 未解決の問題（優先度順）
+
+### 問題1: Middleware Supabase fetchエラー（最重要・ブロッカー）
+**症状:** ステージ選択画面（`/play/reading`）からゲームページ（`/play/reading/grade_X_speed`）への遷移が失敗する場合がある
+**エラーログ:**
+```
+Error: fetch failed
+  at context.fetch (.../next/dist/server/web/sandbox/context.js:321:60)
+  at ... @supabase/auth-js ... GoTrueClient.js ... _getUser
+```
+**ファイル:** `middleware.ts`（32行目 `supabase.auth.getUser()`）
+**原因の可能性:**
+- Supabaseの無料プランの接続制限やタイムアウト
+- ネットワーク環境の問題
+- Supabaseプロジェクトが一時停止している可能性（無料プランは非アクティブで停止する）
+**対処案:**
+1. Supabaseダッシュボード（https://supabase.com/dashboard）でプロジェクトのステータスを確認
+2. middleware.ts内のgetUser()にtry-catchを追加し、Supabase接続失敗時でもページ遷移をブロックしないようにする
+3. `/play`パスはそもそも認証不要なので、matcherから除外するのも有効
+
+### 問題2: RPCスキーマ不一致
+**症状:** `column "score" of relation "learning_logs" does not exist`
+**原因:** Supabase側の`rpc_finish_game`関数が参照する`learning_logs`テーブルに`score`カラムがない
+**対処案:**
+- Supabaseダッシュボードでテーブルスキーマを確認・修正
+- またはRPC関数を書き直す
+- 現状のコードでは報酬計算に影響なし（RPCエラーをcatchして報酬は返す）
+
+### 問題3: Phase B動作未確認
+- コード変更は完了しているが、問題1のため実際にゲームを完了して報酬表示を確認できていない
+- 問題1を修正後にゲームを通しでプレイして動作確認が必要
+
+---
+
+## 完了済みフェーズ
+
+### Phase A: ゲーム結果のDB保存 ✅
+- `submitGameResult`をゲームページのgameOver useEffectから呼び出し
+- React Strict Mode二重送信防止（`useRef`フラグ）
+- 依存配列修正（`resolvedParams.stage`追加）
+- コミット済み: `63bb60e`, `1744f5b`
+
+### Phase B: キャラクタードロップの有効化（コード完了、動作未確認）
+- `calculateRewards`フル版有効化
+- `RewardDisplay`コンポーネントをリザルトモーダルに組み込み
+- **未コミット・動作確認未完了**
+
+---
+
+## 今後のロードマップ
+
+| Phase | 内容 | 状態 |
+|-------|------|------|
+| A | ゲーム結果のDB保存 | ✅ 完了 |
+| B | キャラクタードロップの有効化 | コード完了、動作未確認 |
+| C | グローバルナビゲーション（🍊 みかんキャッチ ヘッダー） | 未着手 |
+| D | 認証強化（匿名→email/Google） | 未着手 |
+| E | 追加機能（デイリーミッション等） | 未着手 |
+
+---
+
+## 技術スタック
+- Next.js 15.5.9 / React 19 / App Router
+- Supabase (PostgreSQL + 匿名認証)
+- Framer Motion（アニメーション）
+- Tailwind CSS / styled-jsx
+- TypeScript
+
+## リポジトリ・デプロイ
+- GitHub: https://github.com/daishi-japan/kanji-game-website.git
+- Vercel: 自動デプロイ（mainへのpushで発動）
+- 開発サーバー: `npm run dev`（通常ポート3000）
+
+## 重要ファイル一覧
+| ファイル | 役割 |
+|---------|------|
+| `middleware.ts` | 認証ミドルウェア（/parentを保護、/playは除外判定あり） |
+| `app/play/reading/[stage]/page.tsx` | よみゲーム本体 |
+| `app/play/reading/page.tsx` | ステージ選択画面 |
+| `app/actions/game.ts` | ゲーム結果送信サーバーアクション |
+| `lib/data/reward-data.ts` | 報酬計算ロジック・ドロップテーブル |
+| `lib/data/character-data.ts` | キャラクターマスタデータ（20体） |
+| `components/result/RewardDisplay.tsx` | 報酬表示UIコンポーネント |
+| `lib/game/reading-game-logic.ts` | ゲームステート管理 |
+| `.env.local` | Supabase接続情報 |

@@ -112,27 +112,9 @@ export const dropTables: Record<string, DropTable> = {
 }
 
 /**
- * 報酬計算ロジック（簡略版 - コインのみ）
+ * 報酬計算ロジック（キャラクター・エサドロップ含む）
  */
 export function calculateRewards(result: GameResult): RewardItem[] {
-  const rewards: RewardItem[] = []
-
-  // コインのみ（スコアの1/10）
-  const coins = Math.floor(result.score / 10)
-  rewards.push({
-    type: 'coin',
-    id: 'coin',
-    name: 'コイン',
-    emoji: '🪙',
-    amount: coins,
-  })
-
-  return rewards
-}
-
-// ===== Phase 2以降の機能：コメントアウト開始 =====
-/*
-export function calculateRewards_FULL(result: GameResult): RewardItem[] {
   const rewards: RewardItem[] = []
   const dropTable = dropTables[result.rank]
 
@@ -191,8 +173,6 @@ export function calculateRewards_FULL(result: GameResult): RewardItem[] {
 
   return rewards
 }
-*/
-// ===== コメントアウト終了 =====
 
 /**
  * キャラクター抽選
